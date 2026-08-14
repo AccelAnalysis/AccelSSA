@@ -1,4 +1,4 @@
-import { CATEGORY6_METRIC_DEFINITIONS } from "./metricCatalog.js";
+import { CATEGORY6_METRIC_DEFINITIONS } from "./metricCatalog.ts";
 import type { MetricDefinition } from "./model.js";
 
 export interface MetricRegistryPort {
