@@ -34,7 +34,9 @@ describe("production route convergence", () => {
 
   it("retains explicit tablet and mobile shell behavior", () => {
     const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
-    expect(css).toContain("@media (max-width: 760px)");
-    expect(css).toContain("@media (max-width: 480px)");
+    expect(css).toContain("@media (max-width: 840px)");
+    expect(css).toContain("@media (max-width: 620px)");
+    expect(css).toContain(".side-drawer");
+    expect(css).toContain("border-radius: 12px 12px 0 0");
   });
 });
