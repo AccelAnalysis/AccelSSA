@@ -1,0 +1,43 @@
+name: Category 08 Live Analysis
+
+on:
+  push:
+    branches:
+      - feature/category-08-live-analysis
+    paths:
+      - "packages/decision-analytics/**"
+      - "packages/requirements-engine/**"
+      - "src/app/analysis/**"
+      - "src/components/workspace/analysis-workspace*"
+      - "src/domains/decision-analytics/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/category-08-live-analysis.yml"
+  pull_request:
+    paths:
+      - "packages/decision-analytics/**"
+      - "packages/requirements-engine/**"
+      - "src/app/analysis/**"
+      - "src/components/workspace/analysis-workspace*"
+      - "src/domains/decision-analytics/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/category-08-live-analysis.yml"
+
+jobs:
+  validate-category-08:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Decision analytics tests
+        run: npm run test --workspace @accelssa/decision-analytics
+      - name: Full repository check
+        run: npm run check
