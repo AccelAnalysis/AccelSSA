@@ -183,10 +183,14 @@
 
 @media print {
   @page { size: Letter; margin: 0.55in; }
-  :global(.sidebar), :global(.topbar), [data-print-hidden] { display: none !important; }
-  :global(.app-shell), :global(.shell-main) { display: block !important; min-height: 0 !important; }
-  :global(.content) { padding: 0 !important; margin: 0 !important; max-width: none !important; }
-  :global(body), :global(html) { background: white !important; }
+  :global(body):has(.clientReportScreen) :global(.sidebar),
+  :global(body):has(.clientReportScreen) :global(.topbar) { display: none !important; }
+  :global(body):has(.clientReportScreen) :global(.app-shell),
+  :global(body):has(.clientReportScreen) :global(.shell-main) { display: block !important; min-height: 0 !important; }
+  :global(body):has(.clientReportScreen) :global(.content) { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  :global(body):has(.clientReportScreen),
+  :global(html):has(.clientReportScreen) { background: white !important; }
+  .reportToolbar { display: none !important; }
   .clientReportScreen { position: static; overflow: visible; background: white; }
   .reportDocument { width: 100%; margin: 0; box-shadow: none; }
   .reportCover { min-height: 9.6in; break-after: page; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
