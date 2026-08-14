@@ -1,3 +1,4 @@
+import { isFirmAdministrator } from "@/domains/identity-security/request-access";
 import { requireWorkspaceApiAccess } from "@/domains/data-ai/api-access";
 import { searchApplicationCatalog } from "@/domains/data-ai/search-runtime";
 
@@ -10,7 +11,12 @@ export async function GET(request: Request) {
   const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";
   if (!query) return Response.json({ query, results: [] }, { headers: { "Cache-Control": "no-store" } });
   return Response.json(
-    { query, results: searchApplicationCatalog(query) },
+    {
+      query,
+      results: searchApplicationCatalog(query, {
+        includeAdministration: isFirmAdministrator(access.access),
+      }),
+    },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
