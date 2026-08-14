@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const access = await requireFirmAdminApiAccess(request);
   if (!access.ok) return access.response;
 
-  const snapshot = operationalSnapshot();
+  const snapshot = await operationalSnapshot({ tenantId: access.access.tenant?.tenantId });
   const status = snapshot.readiness === "ERROR" ? 503 : 200;
   return Response.json(
     snapshot,
