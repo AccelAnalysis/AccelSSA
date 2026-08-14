@@ -18,14 +18,14 @@ describe("requirements workspace runtime", () => {
   });
 
   it("creates an empty authoritative workspace only on the first authenticated mutation", async () => {
-    let stored: RequirementsWorkspaceState | null = null;
+    const memory: { state: RequirementsWorkspaceState | null } = { state: null };
     configureRequirementsWorkspaceRuntime({
       resolveActor: async (projectId) => ({ tenantId: "tenant-1", projectId, userId: "user-1" }),
       store: {
-        load: async () => stored,
+        load: async () => memory.state,
         save: async (state, expectedRevision) => {
           expect(expectedRevision).toBeNull();
-          stored = state;
+          memory.state = state;
           return state;
         },
       },
@@ -44,8 +44,8 @@ describe("requirements workspace runtime", () => {
       }),
     );
 
-    expect(stored?.versions).toHaveLength(1);
-    expect(stored?.versions[0]?.requirements).toEqual([]);
-    expect(stored?.scenarios).toEqual([]);
+    expect(memory.state?.versions).toHaveLength(1);
+    expect(memory.state?.versions[0]?.requirements).toEqual([]);
+    expect(memory.state?.scenarios).toEqual([]);
   });
 });

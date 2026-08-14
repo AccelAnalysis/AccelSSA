@@ -41,14 +41,14 @@ function required(formData: FormData, key: string): string {
 
 function enumValue<T extends readonly string[]>(formData: FormData, key: string, allowed: T): T[number] {
   const raw = required(formData, key);
-  if (!allowed.includes(raw)) throw new Error(`${key} is invalid.`);
+  if (!(allowed as readonly string[]).includes(raw)) throw new Error(`${key} is invalid.`);
   return raw as T[number];
 }
 
 function optionalUnit(formData: FormData): UnitCode | null {
   const raw = value(formData, "unit");
   if (!raw) return null;
-  if (!UNIT_CODES.includes(raw)) throw new Error("unit is invalid.");
+  if (!(UNIT_CODES as readonly string[]).includes(raw)) throw new Error("unit is invalid.");
   return raw as UnitCode;
 }
 
