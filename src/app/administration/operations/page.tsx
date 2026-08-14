@@ -1,11 +1,15 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { PageHeader } from "@/components/ui/page-header";
+import { resolveWorkspaceAccess } from "@/domains/identity-security/request-access";
 import { operationalSnapshot } from "@/domains/data-ai/runtime-status";
 
 export const dynamic = "force-dynamic";
 
-export default function OperationsAdministrationPage() {
-  const snapshot = operationalSnapshot();
+export default async function OperationsAdministrationPage() {
+  const requestHeaders = await headers();
+  const access = await resolveWorkspaceAccess(requestHeaders.get("cookie"));
+  const snapshot = await operationalSnapshot({ tenantId: access.tenant?.tenantId });
 
   return (
     <>
@@ -25,7 +29,7 @@ export default function OperationsAdministrationPage() {
             {snapshot.readinessLabel}
           </span>
         </div>
-        <p className="muted-note">Checked {new Date(snapshot.checkedAt).toLocaleString()}. Configuration readiness does not claim a third-party provider is reachable unless a live adapter reports that state.</p>
+        <p className="muted-note">Checked {new Date(snapshot.checkedAt).toLocaleString()}. Core readiness is based on the project data store and workspace search; optional providers are reported separately.</p>
       </section>
 
       <section className="section table-wrap" aria-label="Operational capability status">
@@ -53,9 +57,36 @@ export default function OperationsAdministrationPage() {
         </table>
       </section>
 
-      <section className="section card">
-        <h2>Background work</h2>
-        <p>Job history is shown only when a durable status reader is connected. AccelSSA does not display an empty queue as a successful job state when job history is unavailable.</p>
+      <section className="section">
+        <div className="section-head">
+          <div>
+            <h2>Background jobs</h2>
+            <p>Most recent tenant-scoped work from the authoritative platform job table.</p>
+          </div>
+        </div>
+        {snapshot.backgroundJobs.length > 0 ? (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Job</th><th>Status</th><th>Progress</th><th>Attempts</th><th>Updated</th></tr></thead>
+              <tbody>
+                {snapshot.backgroundJobs.map((job) => (
+                  <tr key={job.id}>
+                    <td><strong>{job.type}</strong></td>
+                    <td><span className={`status-badge${job.status === "SUCCEEDED" ? "" : " reserved"}`}>{job.status.replaceAll("_", " ")}</span></td>
+                    <td>{job.progress}%</td>
+                    <td>{job.attempt} / {job.maxAttempts}</td>
+                    <td>{new Date(job.updatedAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="card empty-state">
+            <div className="empty-state-mark" aria-hidden="true">•</div>
+            <div><h2>No job records to show</h2><p>{snapshot.capabilities.find((capability) => capability.id === "job-history")?.detail}</p></div>
+          </div>
+        )}
       </section>
 
       <div className="button-row">
