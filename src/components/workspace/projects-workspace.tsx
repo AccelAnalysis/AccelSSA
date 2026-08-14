@@ -1,69 +1,63 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { PageHeader } from "@/components/ui/page-header";
+import { listAccessibleProjects } from "@/domains/projects-workspace/runtime";
+import { defaultProjectStages } from "../../../domains/projects-workflow/src/default-workflow";
+import styles from "@/components/projects/projects.module.css";
 
-const workflowSteps = [
-  ["1", "Define requirements", "Capture the client brief, mandatory constraints, preferred criteria and scenario assumptions."],
-  ["2", "Screen markets", "Evaluate candidate geographies, workforce, infrastructure and location intelligence against project requirements."],
-  ["3", "Evaluate properties", "Review sites and buildings, utilities, development readiness, due diligence and visit findings."],
-  ["4", "Make the decision", "Compare finalists, model costs and incentives, resolve risks and prepare the recommendation and deliverables."],
-] as const;
+function stageLabel(tenantId: string, code: string) {
+  return defaultProjectStages(tenantId).find((stage) => stage.code === code)?.displayName ?? code.replaceAll("_", " ");
+}
 
-export function ProjectsWorkspace() {
+function currency(value?: number) {
+  return value === undefined ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+}
+
+export async function ProjectsWorkspace() {
+  let projects: Awaited<ReturnType<typeof listAccessibleProjects>> = [];
+  let unavailable: string | undefined;
+  try {
+    projects = await listAccessibleProjects((await headers()).get("cookie"));
+  } catch (error) {
+    unavailable = error instanceof Error ? error.message : "Projects are unavailable.";
+  }
+
   return (
     <>
       <div className="page-header-with-action">
-        <PageHeader
-          eyebrow="Site selection workspace"
-          title="Projects"
-          description="Manage site-selection engagements from client requirements through market screening, property evaluation, due diligence, recommendation and client deliverables."
-        />
-        <Link className="button button-primary" href="/projects/new">Create Project</Link>
+        <PageHeader eyebrow="Workspace" title="Projects" description="Active site-selection engagements and the work requiring attention." />
+        <Link className="button button-primary" href="/projects/new">Create project</Link>
       </div>
 
-      <section className="card empty-state" aria-labelledby="projects-empty-title">
-        <div className="empty-state-mark" aria-hidden="true">+</div>
-        <div>
-          <h2 id="projects-empty-title">No projects yet</h2>
-          <p>Create your first site-selection project to define requirements and begin geographic screening.</p>
-        </div>
-        <Link className="button button-primary" href="/projects/new">Create Project</Link>
-      </section>
+      {unavailable ? <div className="inline-notice" role="status">{unavailable}</div> : null}
 
-      <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Site selection workflow</h2>
-            <p>One engagement workspace carries the decision from client brief to final recommendation.</p>
-          </div>
+      {!unavailable && projects.length === 0 ? (
+        <div className="empty-state-line">
+          <span>No projects yet.</span>
+          <Link href="/projects/new">Create the first project →</Link>
         </div>
-        <div className="grid grid-4 workflow-grid">
-          {workflowSteps.map(([step, title, description]) => (
-            <article className="card workflow-card" key={step}>
-              <div className="workflow-step">{step}</div>
-              <h2>{title}</h2>
-              <p>{description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      ) : null}
 
-      <section className="section grid grid-3">
-        <article className="card attention-card">
-          <span className="card-kicker">Projects requiring attention</span>
-          <h2>Nothing requires attention</h2>
-          <p>Open risks, missing required information and upcoming deadlines will appear here when projects are active.</p>
-        </article>
-        <article className="card attention-card">
-          <span className="card-kicker">Upcoming visits</span>
-          <h2>No site visits scheduled</h2>
-          <p>Planned site visits will appear here with dates, candidates and itinerary context.</p>
-        </article>
-        <article className="card attention-card">
-          <span className="card-kicker">Recent deliverables</span>
-          <h2>No deliverables yet</h2>
-          <p>Approved comparisons, recommendation packages and reports will appear here.</p>
-        </article>
-      </section>
+      {projects.length > 0 ? (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Project</th><th>Stage</th><th>Target opening</th><th>Geographies</th><th>Investment</th><th>Employment</th><th>Open work</th></tr></thead>
+            <tbody>
+              {projects.map(({ project, clientName, openTasks, overdueTasks }) => (
+                <tr key={project.projectId}>
+                  <td><Link className={styles.tableLink} href={`/projects/${project.projectId}`}>{project.name}</Link><span className={styles.secondary}>{clientName}</span></td>
+                  <td>{stageLabel(project.tenantId, project.stageCode)}</td>
+                  <td>{project.targetOpeningDate ?? "—"}</td>
+                  <td>{project.targetGeographies.length ? project.targetGeographies.join(", ") : "—"}</td>
+                  <td>{currency(project.capitalInvestment)}</td>
+                  <td>{project.plannedEmployment?.toLocaleString("en-US") ?? "—"}</td>
+                  <td>{openTasks}{overdueTasks ? <span className="status-danger"> · {overdueTasks} overdue</span> : null}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </>
   );
 }
