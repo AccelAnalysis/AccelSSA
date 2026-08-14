@@ -79,7 +79,7 @@ jobs:
         run: |
           npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} apphosting:rollouts:create \
             "${FIREBASE_APPHOSTING_BACKEND}" \
-            --git_commit "${GITHUB_SHA}" \
+            --git-commit "${GITHUB_SHA}" \
             --project "${FIREBASE_PROJECT_ID}" \
             --non-interactive
 
