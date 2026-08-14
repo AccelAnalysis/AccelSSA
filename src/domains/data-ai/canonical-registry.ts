@@ -3,8 +3,8 @@ import {
   type FreshnessPolicy,
   type MetricDefinition,
   type MetricKey,
-} from "../../../packages/data-ai-automation/src/index";
-import { CATEGORY6_METRIC_DEFINITIONS } from "../../../packages/location-intelligence/src/metricCatalog";
+} from "@accelssa/data-ai-automation";
+import { CATEGORY6_METRIC_DEFINITIONS } from "@accelssa/location-intelligence";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
