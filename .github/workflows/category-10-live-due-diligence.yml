@@ -1,0 +1,55 @@
+name: Category 10 Live Due Diligence & Visits
+
+on:
+  push:
+    branches:
+      - feature/category-10-live-due-diligence-visits
+    paths:
+      - "src/app/visits/**"
+      - "src/components/workspace/visits-workspace*"
+      - "src/domains/due-diligence/**"
+      - "packages/domain-due-diligence/**"
+      - ".github/workflows/category-10-live-due-diligence.yml"
+  pull_request:
+    paths:
+      - "src/app/visits/**"
+      - "src/components/workspace/visits-workspace*"
+      - "src/domains/due-diligence/**"
+      - "packages/domain-due-diligence/**"
+      - ".github/workflows/category-10-live-due-diligence.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-category-10:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Test due-diligence domain
+        run: npm run test --workspace @accelssa/due-diligence
+
+      - name: Run full platform check
+        shell: bash
+        run: |
+          set +e
+          npm run check > /tmp/category-10-check.log 2>&1
+          status=$?
+          cat /tmp/category-10-check.log
+          if [ "$status" -ne 0 ]; then
+            message=$(tail -n 80 /tmp/category-10-check.log | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
+            echo "::error title=Category 10 npm run check failed::$message"
+            exit "$status"
+          fi
