@@ -1,17 +1,33 @@
-export function PageHeader({ eyebrow, title, description, status }: {
-  eyebrow: string;
+import type { ReactNode } from "react";
+
+export function PageHeader({
+  eyebrow,
+  title,
+  description,
+  status,
+  showDescription = false,
+  actions,
+}: {
+  eyebrow?: string;
   title: string;
-  description: string;
+  description?: string;
   status?: string;
+  showDescription?: boolean;
+  actions?: ReactNode;
 }) {
   return (
     <header className="page-header">
-      <div>
-        <div className="eyebrow">{eyebrow}</div>
+      <div className="page-heading">
+        {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
         <h1>{title}</h1>
-        <p className="lede">{description}</p>
+        {showDescription && description ? <p className="lede">{description}</p> : null}
       </div>
-      {status ? <span className="status-badge">{status}</span> : null}
+      {status || actions ? (
+        <div className="page-header-actions">
+          {status ? <span className="status-badge">{status}</span> : null}
+          {actions}
+        </div>
+      ) : null}
     </header>
   );
 }
