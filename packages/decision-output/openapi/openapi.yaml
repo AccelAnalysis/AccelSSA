@@ -1,0 +1,435 @@
+openapi: 3.1.0
+info:
+  title: AccelSSA Category 11 Decision Output API
+  version: 0.1.0
+  description: >-
+    Reference API contract for evidence, recommendations, client participation,
+    and snapshot-bound deliverables. Authentication and tenant/project authorization
+    are supplied by the shared platform layer.
+servers:
+  - url: /api/v1
+paths:
+  /projects/{projectId}/evidence:
+    post:
+      operationId: createEvidence
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEvidence'
+      responses:
+        '201':
+          description: Evidence created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evidence'
+  /projects/{projectId}/evidence/{evidenceId}/links:
+    post:
+      operationId: linkEvidence
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: evidenceId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEvidenceLink'
+      responses:
+        '201': { description: Evidence link created }
+        '403': { description: Evidence is outside authorized tenant/project scope }
+  /projects/{projectId}/decision-snapshots:
+    post:
+      operationId: createDecisionSnapshot
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionSnapshotReferences'
+      responses:
+        '201':
+          description: Immutable decision snapshot created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionSnapshot'
+  /projects/{projectId}/recommendations:
+    post:
+      operationId: createRecommendation
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecommendation'
+      responses:
+        '201':
+          description: Draft recommendation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+  /projects/{projectId}/recommendations/{recommendationId}/transition:
+    post:
+      operationId: transitionRecommendation
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: recommendationId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to]
+              properties:
+                to:
+                  $ref: '#/components/schemas/RecommendationStatus'
+                readiness:
+                  $ref: '#/components/schemas/RecommendationReadiness'
+      responses:
+        '200':
+          description: Recommendation transitioned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+        '409': { description: Invalid lifecycle transition or finalization blocker }
+  /projects/{projectId}/recommendations/{recommendationId}/candidates:
+    post:
+      operationId: addRecommendationCandidate
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: recommendationId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationCandidateInput'
+      responses:
+        '201': { description: Recommendation candidate disposition created }
+  /projects/{projectId}/recommendations/{recommendationId}/conditions:
+    post:
+      operationId: addRecommendationCondition
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: recommendationId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationConditionInput'
+      responses:
+        '201': { description: Recommendation condition created }
+  /projects/{projectId}/recommendations/{recommendationId}/acknowledgements:
+    post:
+      operationId: acknowledgeDecision
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: recommendationId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [ACKNOWLEDGED, APPROVED, REJECTED, REQUESTED_REVISION]
+                comment: { type: string }
+      responses:
+        '201': { description: Client acknowledgement recorded against exact recommendation version }
+  /projects/{projectId}/client-view:
+    get:
+      operationId: getClientProjection
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Security-filtered client projection of authoritative project content
+  /projects/{projectId}/questions/{questionId}/answer:
+    post:
+      operationId: answerClientQuestion
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: questionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [answer]
+              properties:
+                answer: { type: string, minLength: 1 }
+      responses:
+        '200': { description: Client question answered }
+  /projects/{projectId}/deliverables:
+    post:
+      operationId: createDeliverable
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeliverable'
+      responses:
+        '201':
+          description: Logical deliverable created and bound to a decision snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deliverable'
+  /projects/{projectId}/deliverables/{deliverableId}/generate:
+    post:
+      operationId: generateDeliverable
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: deliverableId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [format]
+              properties:
+                format:
+                  type: string
+                  enum: [PDF, PPTX, XLSX, ZIP, PNG, JSON]
+      responses:
+        '202': { description: Rendering accepted by application/background-job adapter }
+        '409': { description: Deliverable cannot be generated in current state }
+components:
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema: { type: string }
+  schemas:
+    Visibility:
+      type: string
+      enum: [INTERNAL, PROJECT_TEAM, CLIENT, EXTERNAL_SHARED]
+    DataClassification:
+      type: string
+      enum: [PUBLIC, INTERNAL, CONFIDENTIAL, CLIENT_CONFIDENTIAL, HIGHLY_RESTRICTED]
+    Evidence:
+      type: object
+      required: [id, tenantId, projectId, title, sourceType, confidentiality, visibility, createdBy, createdAt]
+      properties:
+        id: { type: string }
+        tenantId: { type: string }
+        projectId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        sourceType:
+          type: string
+          enum: [DOCUMENT_VERSION, METRIC_OBSERVATION, CLIENT_RESPONSE, CONSULTANT_ASSERTION, EXTERNAL_REFERENCE]
+        documentVersionId: { type: string }
+        metricObservationId: { type: string }
+        externalReferenceId: { type: string }
+        confidence: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        confidentiality: { $ref: '#/components/schemas/DataClassification' }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+    CreateEvidence:
+      type: object
+      required: [title, sourceType, confidentiality, visibility]
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        sourceType:
+          type: string
+          enum: [DOCUMENT_VERSION, METRIC_OBSERVATION, CLIENT_RESPONSE, CONSULTANT_ASSERTION, EXTERNAL_REFERENCE]
+        sourceId: { type: string }
+        documentVersionId: { type: string }
+        metricObservationId: { type: string }
+        externalReferenceId: { type: string }
+        observationDate: { type: string, format: date }
+        effectiveDate: { type: string, format: date }
+        confidence: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        confidentiality: { $ref: '#/components/schemas/DataClassification' }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+    CreateEvidenceLink:
+      type: object
+      required: [targetType, targetId, relationship]
+      properties:
+        targetType:
+          type: string
+          enum: [REQUIREMENT, METRIC, PROPERTY_ATTRIBUTE, RISK, COST_ASSUMPTION, INCENTIVE, FINDING, SCORE, CONSULTANT_JUDGMENT, RECOMMENDATION, RECOMMENDATION_CONDITION]
+        targetId: { type: string }
+        relationship:
+          type: string
+          enum: [SUPPORTS, CONTRADICTS, QUALIFIES, SUPERSEDES, VERIFIES]
+        note: { type: string }
+    DecisionSnapshotReferences:
+      type: object
+      required: [requirementsVersionId]
+      properties:
+        requirementsVersionId: { type: string }
+        scenarioVersionId: { type: string }
+        scorecardVersionId: { type: string }
+        comparisonVersionId: { type: string }
+        costModelVersionId: { type: string }
+        incentiveModelVersionId: { type: string }
+        riskSnapshotId: { type: string }
+        candidateSnapshotId: { type: string }
+        siteVisitSnapshotId: { type: string }
+    DecisionSnapshot:
+      type: object
+      required: [id, tenantId, projectId, references, createdAt, createdBy]
+      properties:
+        id: { type: string }
+        tenantId: { type: string }
+        projectId: { type: string }
+        references: { $ref: '#/components/schemas/DecisionSnapshotReferences' }
+        createdAt: { type: string, format: date-time }
+        createdBy: { type: string }
+    RecommendationStatus:
+      type: string
+      enum: [DRAFT, INTERNAL_REVIEW, CLIENT_REVIEW, FINAL]
+    CreateRecommendation:
+      type: object
+      required: [title, executiveSummary, rationale, decisionSnapshotId]
+      properties:
+        title: { type: string }
+        executiveSummary: { type: string }
+        rationale: { type: string }
+        nextSteps: { type: string }
+        decisionSnapshotId: { type: string }
+        version: { type: integer, minimum: 1 }
+        supersedesRecommendationId: { type: string }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        confidentiality: { $ref: '#/components/schemas/DataClassification' }
+    Recommendation:
+      type: object
+      required: [id, tenantId, projectId, version, status, title, executiveSummary, rationale, decisionSnapshotId, visibility, confidentiality, authorId, createdAt]
+      properties:
+        id: { type: string }
+        tenantId: { type: string }
+        projectId: { type: string }
+        version: { type: integer }
+        status: { $ref: '#/components/schemas/RecommendationStatus' }
+        title: { type: string }
+        executiveSummary: { type: string }
+        rationale: { type: string }
+        nextSteps: { type: string }
+        decisionSnapshotId: { type: string }
+        supersedesRecommendationId: { type: string }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        confidentiality: { $ref: '#/components/schemas/DataClassification' }
+        authorId: { type: string }
+        approvedBy: { type: string }
+        approvedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        finalizedAt: { type: string, format: date-time }
+    RecommendationCandidateInput:
+      type: object
+      required: [candidateId, disposition, rationale]
+      properties:
+        candidateId: { type: string }
+        disposition:
+          type: string
+          enum: [PREFERRED, ALTERNATIVE, CONDITIONAL, NOT_RECOMMENDED]
+        rank: { type: integer, minimum: 1 }
+        rationale: { type: string }
+        conditionsSummary: { type: string }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        confidentiality: { $ref: '#/components/schemas/DataClassification' }
+    RecommendationConditionInput:
+      type: object
+      required: [description]
+      properties:
+        description: { type: string }
+        targetType: { type: string }
+        targetId: { type: string }
+        ownerId: { type: string }
+        dueDate: { type: string, format: date }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        confidentiality: { $ref: '#/components/schemas/DataClassification' }
+    RecommendationReadiness:
+      type: object
+      required:
+        [mandatoryRequirementsTotal, mandatoryRequirementsResolved, criticalRisksOpen, highRisksOpen, requiredEvidenceTotal, requiredEvidenceAttached, costModelApproved, incentiveModelApproved, finalSiteVisitComplete, openConditions]
+      properties:
+        mandatoryRequirementsTotal: { type: integer, minimum: 0 }
+        mandatoryRequirementsResolved: { type: integer, minimum: 0 }
+        criticalRisksOpen: { type: integer, minimum: 0 }
+        highRisksOpen: { type: integer, minimum: 0 }
+        requiredEvidenceTotal: { type: integer, minimum: 0 }
+        requiredEvidenceAttached: { type: integer, minimum: 0 }
+        costModelApproved: { type: boolean }
+        incentiveModelApproved: { type: boolean }
+        finalSiteVisitComplete: { type: boolean }
+        openConditions: { type: integer, minimum: 0 }
+    CreateDeliverable:
+      type: object
+      required: [type, title, templateId, templateVersionId, sourceSnapshotId]
+      properties:
+        type:
+          type: string
+          enum: [MARKET_SCREENING_REPORT, MARKET_COMPARISON, LABOR_MARKET_ANALYSIS, PROPERTY_PROFILE, SITE_COMPARISON_MATRIX, SITE_VISIT_BOOK, OPERATING_COST_ANALYSIS, INCENTIVE_ANALYSIS, RISK_REPORT, EXECUTIVE_RECOMMENDATION, BOARD_PRESENTATION, CLIENT_DATA_ROOM]
+        title: { type: string }
+        templateId: { type: string }
+        templateVersionId: { type: string }
+        sourceSnapshotId: { type: string }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        confidentiality: { $ref: '#/components/schemas/DataClassification' }
+    Deliverable:
+      type: object
+      required: [id, tenantId, projectId, type, title, status, templateId, templateVersionId, sourceSnapshotId, visibility, confidentiality, createdBy, createdAt]
+      properties:
+        id: { type: string }
+        tenantId: { type: string }
+        projectId: { type: string }
+        type: { type: string }
+        title: { type: string }
+        status:
+          type: string
+          enum: [DRAFT, GENERATING, READY_FOR_REVIEW, APPROVED, PUBLISHED, GENERATION_FAILED, SUPERSEDED, WITHDRAWN]
+        templateId: { type: string }
+        templateVersionId: { type: string }
+        sourceSnapshotId: { type: string }
+        currentVersionId: { type: string }
+        visibility: { $ref: '#/components/schemas/Visibility' }
+        confidentiality: { $ref: '#/components/schemas/DataClassification' }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
