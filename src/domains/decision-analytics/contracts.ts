@@ -1,9 +1,9 @@
-import type { Candidate, DecisionSnapshot } from "../../../packages/decision-analytics/src/index";
+import type { Candidate, DecisionSnapshot } from "@accelssa/decision-analytics";
 import type {
   DecisionCriterionNode,
   RequirementSetVersion,
   ScenarioDefinition,
-} from "../../../packages/requirements-engine/src/index";
+} from "@accelssa/requirements-engine";
 
 export type AnalysisDataMode = "AUTHORITATIVE" | "SAMPLE";
 
