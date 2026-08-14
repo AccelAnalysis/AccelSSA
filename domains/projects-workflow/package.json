@@ -1,0 +1,14 @@
+{
+  "name": "@accelssa/projects-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AccelSSA Category 3 domain: projects, clients, workflow, tasks and collaboration.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": ">=5.8 <6"
+  }
+}
