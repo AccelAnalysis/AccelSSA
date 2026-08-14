@@ -1,9 +1,11 @@
-name: Category 11 - Decision Output
+name: Category 11 - Live Deliverables
 
 on:
   pull_request:
     paths:
       - "packages/decision-output/**"
+      - "src/app/deliverables/**"
+      - "src/components/deliverables/**"
       - "docs/category-11-evidence-recommendations-client-deliverables.md"
       - ".github/workflows/category-11-decision-output.yml"
   push:
@@ -11,6 +13,8 @@ on:
       - main
     paths:
       - "packages/decision-output/**"
+      - "src/app/deliverables/**"
+      - "src/components/deliverables/**"
       - "docs/category-11-evidence-recommendations-client-deliverables.md"
       - ".github/workflows/category-11-decision-output.yml"
 
@@ -20,14 +24,14 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/decision-output
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
+          cache: npm
       - run: npm install --no-audit --no-fund
-      - run: npm run typecheck
-      - run: npm test
+      - name: Decision output tests
+        run: npm run test --workspace @accelssa/decision-output
+      - name: Full application check
+        run: npm run check
