@@ -1,8 +1,25 @@
 import { PageHeader } from "@/components/ui/page-header";
 
 export default function UsagePage() {
-  return <><PageHeader eyebrow="Administration" title="Runtime & Usage" description="Foundation visibility into the runtime classes that later operations and observability work will instrument." />
-  <div className="grid grid-4"><div className="card"><div className="metric-value">5</div><div className="metric-label">Storage workload classes</div></div><div className="card"><div className="metric-value">6</div><div className="metric-label">Job lifecycle states</div></div><div className="card"><div className="metric-value">4</div><div className="metric-label">Configuration scopes</div></div><div className="card"><div className="metric-value">v1</div><div className="metric-label">API namespace</div></div></div>
-  <section className="section card"><h2>Persistence workloads</h2><p>Operational data · geospatial data · analytical data · file/object storage · search indexes.</p></section>
-  <section className="section card"><h2>Long-running operations</h2><p>Mass screening, metric refresh, spatial calculations, bulk imports, document/report processing, AI analysis, score recalculation, freshness checks and notifications use background-job contracts rather than blocking request/response execution.</p></section></>;
+  return (
+    <>
+      <PageHeader
+        eyebrow="Administration"
+        title="Usage & Activity"
+        description="Review organization activity, project volume and service usage when operational records are available."
+      />
+      <section className="card empty-state">
+        <div className="empty-state-mark" aria-hidden="true">•</div>
+        <div>
+          <h2>No usage history yet</h2>
+          <p>Project and organization activity will appear here after the first live engagement begins.</p>
+        </div>
+      </section>
+      <section className="section grid grid-3">
+        <article className="card"><h2>Project activity</h2><p>Active, completed and archived engagement activity will be summarized here.</p></article>
+        <article className="card"><h2>Team activity</h2><p>Organization administrators will be able to review membership and collaboration activity.</p></article>
+        <article className="card"><h2>Service usage</h2><p>Data, document and analytical service usage will be summarized when usage records are available.</p></article>
+      </section>
+    </>
+  );
 }

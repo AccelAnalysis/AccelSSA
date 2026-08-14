@@ -1,12 +1,31 @@
 import { PageHeader } from "@/components/ui/page-header";
-import { configurableRegistries } from "@/platform/admin";
+
+const settings = [
+  ["Project stages", "Define the stages used to move engagements from intake through screening, diligence, recommendation and closeout."],
+  ["Requirement categories", "Organize mandatory, preferred and informational client criteria consistently across projects."],
+  ["Scoring categories", "Maintain reusable decision dimensions such as workforce, logistics, utilities, real estate and business climate."],
+  ["Risk classifications", "Standardize risk categories, severity conventions and project review expectations."],
+  ["Property types", "Maintain the site and building classifications used by the property registry."],
+  ["Client visibility defaults", "Set organization defaults for internal, project-team, client and externally shared information."],
+] as const;
 
 export default function ConfigurationPage() {
   return (
     <>
-      <PageHeader eyebrow="Administration" title="Configuration Registries" description="Configurable structures replace hardcoded platform terminology and category lists. Resolution supports platform, firm, template and project scopes with published-version precedence." status="Registry contract active" />
-      <div className="table-wrap"><table><thead><tr><th>Registry key</th><th>Owner</th><th>Foundation behavior</th></tr></thead><tbody>{configurableRegistries.map((key) => <tr key={key}><td><span className="code">{key}</span></td><td>{key.startsWith("project") ? "Category 3" : key.startsWith("requirement") ? "Category 4" : key.startsWith("score") ? "Category 8" : key.startsWith("risk") || key.startsWith("site-visit") ? "Category 10" : key.startsWith("property") ? "Category 7" : key.startsWith("report") || key.startsWith("document") || key.startsWith("client") ? "Category 11" : "Platform"}</td><td>Version-ready registry slot; domain validates substantive values.</td></tr>)}</tbody></table></div>
-      <p className="callout section">Precedence: Project → Template → Tenant → Platform. Only published versions resolve into runtime configuration.</p>
+      <PageHeader
+        eyebrow="Administration"
+        title="Project Configuration"
+        description="Maintain reusable organization standards that keep project setup, screening, comparison and reporting consistent."
+      />
+      <div className="grid grid-2">
+        {settings.map(([title, description]) => (
+          <article className="card settings-card" key={title}>
+            <h2>{title}</h2>
+            <p>{description}</p>
+            <span className="muted-note">No organization-specific values configured.</span>
+          </article>
+        ))}
+      </div>
     </>
   );
 }

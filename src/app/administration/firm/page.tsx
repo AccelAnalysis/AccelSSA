@@ -1,14 +1,39 @@
+import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 
-export default function FirmAdministrationPage() {
+export default function OrganizationAdministrationPage() {
   return (
     <>
-      <PageHeader eyebrow="Administration" title="Firm Profile & Branding" description="Foundation-level firm metadata and reusable presentation configuration. Identity-backed editing activates with Category 2." />
+      <PageHeader
+        eyebrow="Administration"
+        title="Organization"
+        description="Manage the firm identity, branding and defaults used across project workspaces and client-facing deliverables."
+      />
       <div className="grid grid-2">
-        <div className="card"><h2>Firm profile contract</h2><dl className="definition-list"><div className="definition-row"><dt>Identity</dt><dd>Legal/operating name and administrative contacts.</dd></div><div className="definition-row"><dt>Defaults</dt><dd>Tenant-level configuration inherited by templates and projects.</dd></div><div className="definition-row"><dt>Confidentiality</dt><dd>Default classification references; enforcement remains Category 2.</dd></div></dl></div>
-        <div className="card"><h2>Branding contract</h2><dl className="definition-list"><div className="definition-row"><dt>Brand assets</dt><dd>Logo references and reusable visual identity metadata.</dd></div><div className="definition-row"><dt>Deliverables</dt><dd>Brand settings may be consumed by Category 11 report templates.</dd></div><div className="definition-row"><dt>Versioning</dt><dd>Published changes should not silently rewrite historical deliverables.</dd></div></dl></div>
+        <section className="card">
+          <span className="card-kicker">Organization profile</span>
+          <h2>Not configured</h2>
+          <p>Add the organization name and administrative contact details before creating the first live project.</p>
+          <dl className="definition-list section-compact">
+            <div className="definition-row"><dt>Organization name</dt><dd>Not configured</dd></div>
+            <div className="definition-row"><dt>Administrative contact</dt><dd>Not configured</dd></div>
+            <div className="definition-row"><dt>Default confidentiality</dt><dd>Not configured</dd></div>
+          </dl>
+        </section>
+        <section className="card">
+          <span className="card-kicker">Branding</span>
+          <h2>Client presentation defaults</h2>
+          <p>Organization branding will be used for approved reports, presentations and other client deliverables.</p>
+          <ul className="clean-list">
+            <li>Logo and organization identity</li>
+            <li>Report presentation preferences</li>
+            <li>Standard disclosures and methodology language</li>
+          </ul>
+        </section>
       </div>
-      <p className="callout section">Administrative mutation is intentionally not exposed before authenticated firm-administrator authority is implemented by Category 2.</p>
+      <div className="button-row section">
+        <Link className="button button-secondary" href="/administration">Back to Administration</Link>
+      </div>
     </>
   );
 }

@@ -1,2 +1,5 @@
-import { ModulePlaceholder } from "@/components/ui/module-placeholder";
-export default function Page(){ return <ModulePlaceholder path="/projects" />; }
+import { ProjectsWorkspace } from "@/components/workspace/projects-workspace";
+
+export default function ProjectsPage() {
+  return <ProjectsWorkspace />;
+}
