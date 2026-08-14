@@ -1,0 +1,17 @@
+{
+  "apphosting": [
+    {
+      "backendId": "accelssa",
+      "rootDir": ".",
+      "ignore": [
+        "node_modules",
+        "**/node_modules",
+        ".git",
+        ".next",
+        "**/dist",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ]
+}
