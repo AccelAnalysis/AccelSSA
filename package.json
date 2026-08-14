@@ -21,12 +21,16 @@
     "check": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
+    "firebase": "12.16.0",
+    "firebase-admin": "14.2.0",
     "next": "16.2.12",
+    "pg": "8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/pg": "8.20.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "typescript": "6.0.3",
