@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "description": "AccelSSA Category 12 contracts and reference services for data integration, AI, automation, search, operations, and QA.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
     }
   },
   "scripts": {
