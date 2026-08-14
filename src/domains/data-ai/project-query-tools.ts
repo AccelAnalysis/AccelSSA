@@ -2,7 +2,7 @@ import {
   AiToolRegistry,
   type AiToolContext,
   type AiToolResult,
-} from "../../../packages/data-ai-automation/src/ai";
+} from "@accelssa/data-ai-automation";
 
 export type ProjectQueryToolName =
   | "get_project_requirements"
