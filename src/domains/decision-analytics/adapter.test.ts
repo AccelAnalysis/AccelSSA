@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DecisionAnalyticsEngine } from "../../../packages/decision-analytics/src/index";
+import { DecisionAnalyticsEngine } from "@accelssa/decision-analytics";
 import { buildAnalyticsScenario } from "./adapter";
 import { createSampleAnalysisBundle } from "./sample";
 import { resolveAnalysisWorkspaceSource } from "./source";
