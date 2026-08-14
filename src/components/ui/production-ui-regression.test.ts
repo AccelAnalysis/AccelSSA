@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { primaryNavigation } from "@/platform/navigation";
+import { primaryNavigation } from "../../platform/navigation";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
