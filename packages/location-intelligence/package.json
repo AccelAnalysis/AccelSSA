@@ -1,0 +1,17 @@
+{
+  "name": "@accelssa/location-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AccelSSA Category 6 market, workforce, infrastructure and location intelligence bounded context.",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
