@@ -1,5 +1,4 @@
 export const primaryNavigation = [
-  { label: "Overview", href: "/" },
   { label: "Projects", href: "/projects" },
   { label: "Locations", href: "/locations" },
   { label: "Properties", href: "/properties" },
@@ -11,8 +10,8 @@ export const primaryNavigation = [
 ] as const;
 
 export const administrationNavigation = [
-  { label: "Firm", href: "/administration/firm" },
-  { label: "Configuration", href: "/administration/configuration" },
+  { label: "Organization", href: "/administration/firm" },
+  { label: "Project configuration", href: "/administration/configuration" },
   { label: "Templates", href: "/administration/templates" },
-  { label: "Usage & runtime", href: "/administration/usage" },
+  { label: "Usage & activity", href: "/administration/usage" },
 ] as const;
