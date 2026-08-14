@@ -70,7 +70,6 @@ jobs:
           npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} apphosting:backends:get \
             "${FIREBASE_APPHOSTING_BACKEND}" \
             --project "${FIREBASE_PROJECT_ID}" \
-            --location "${FIREBASE_APPHOSTING_LOCATION}" \
             --non-interactive || {
               echo "::error::Firebase App Hosting backend '${FIREBASE_APPHOSTING_BACKEND}' does not exist or the CI service account cannot access it. Create the first backend in project '${FIREBASE_PROJECT_ID}' in ${FIREBASE_APPHOSTING_LOCATION}, associate Firebase Web App ${FIREBASE_APP_ID}, connect it to AccelAnalysis/AccelSSA, disable automatic rollouts, then rerun this workflow."
               exit 1
@@ -89,7 +88,6 @@ jobs:
           npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} apphosting:backends:get \
             "${FIREBASE_APPHOSTING_BACKEND}" \
             --project "${FIREBASE_PROJECT_ID}" \
-            --location "${FIREBASE_APPHOSTING_LOCATION}" \
             --non-interactive | tee /tmp/accelssa-backend.txt
 
       - name: Remove service-account credential file
