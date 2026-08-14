@@ -1,0 +1,37 @@
+name: Category 07 Live Properties
+
+on:
+  pull_request:
+    paths:
+      - "packages/properties/**"
+      - "packages/domain-due-diligence/**"
+      - "src/app/properties/**"
+      - "src/app/api/v1/properties/**"
+      - "src/components/workspace/properties-workspace.tsx"
+      - "src/components/workspace/properties-workspace.module.css"
+      - "src/domains/properties-live/**"
+      - ".github/workflows/category-07-live-properties.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run full repository check
+        run: npm run check
