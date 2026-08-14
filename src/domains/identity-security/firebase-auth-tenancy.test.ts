@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { ProjectId, TenantId, UserId } from "../../platform/contracts";
 import { authorize, DecisionCodes } from "./policy";
-import { authorizeRequest, decidePageAccess, PageAccessStates } from "./request-access";
+import {
+  authorizeRequest,
+  decidePageAccess,
+  isFirmAdministrator,
+  PageAccessStates,
+  selectWorkspaceTenant,
+  type WorkspaceAccess,
+} from "./request-access";
 import {
   AccountStatuses,
   Actions,
@@ -49,6 +56,27 @@ describe("Firebase-backed route and API security", () => {
 
   it("denies administration entry to a non-admin tenant member", () => {
     expect(decidePageAccess({ pathname: "/administration/users", configured: true, hasValidSession: true, hasActiveTenantMembership: true, isFirmAdmin: false })).toBe(PageAccessStates.UNAUTHORIZED);
+  });
+
+  it("fails closed when more than one active organization would make tenant context ambiguous", () => {
+    const selection = selectWorkspaceTenant([
+      { tenantId: tenantA, userId: user, role: Roles.ANALYST, status: MembershipStatuses.ACTIVE, tenantName: "Alpha", tenantSlug: "alpha" },
+      { tenantId: tenantB, userId: user, role: Roles.FIRM_ADMIN, status: MembershipStatuses.ACTIVE, tenantName: "Beta", tenantSlug: "beta" },
+    ]);
+    expect(selection.tenant).toBeUndefined();
+    expect(selection.reason).toMatch(/explicit organization selection/i);
+  });
+
+  it("evaluates Firm Administrator authority only against the selected organization", () => {
+    const access: WorkspaceAccess = {
+      state: PageAccessStates.ALLOW,
+      tenant: { tenantId: tenantA, userId: user, role: Roles.ANALYST, status: MembershipStatuses.ACTIVE, tenantName: "Alpha", tenantSlug: "alpha" },
+      tenants: [
+        { tenantId: tenantA, userId: user, role: Roles.ANALYST, status: MembershipStatuses.ACTIVE, tenantName: "Alpha", tenantSlug: "alpha" },
+        { tenantId: tenantB, userId: user, role: Roles.FIRM_ADMIN, status: MembershipStatuses.ACTIVE, tenantName: "Beta", tenantSlug: "beta" },
+      ],
+    };
+    expect(isFirmAdministrator(access)).toBe(false);
   });
 
   it("denies cross-tenant object access", () => {
