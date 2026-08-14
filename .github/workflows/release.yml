@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  pull_request:
   push:
     branches: [main]
   workflow_dispatch:
@@ -59,6 +60,7 @@ jobs:
           exit 1
 
       - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -66,14 +68,17 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish release image
+        if: github.event_name != 'pull_request'
         run: |
           docker push "${IMAGE}:sha-${GITHUB_SHA}"
           docker push "${IMAGE}:latest"
 
       - name: Release summary
         run: |
-          echo "## AccelSSA release" >> "$GITHUB_STEP_SUMMARY"
+          echo "## AccelSSA release validation" >> "$GITHUB_STEP_SUMMARY"
           echo "Validated the converged application, domain suites, production Next.js build, and container health endpoint." >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Image: \`${IMAGE}:sha-${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "Latest: \`${IMAGE}:latest\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${GITHUB_EVENT_NAME}" != "pull_request" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Published image: \`${IMAGE}:sha-${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "Latest: \`${IMAGE}:latest\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
