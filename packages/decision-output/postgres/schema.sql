@@ -52,6 +52,24 @@ alter table decision_documents
   add constraint decision_documents_current_version_fk foreign key (current_version_id)
   references decision_document_versions(id) deferrable initially deferred;
 
+create table if not exists decision_document_links (
+  id text primary key,
+  tenant_id text not null,
+  project_id text not null,
+  document_id text not null references decision_documents(id),
+  target_type text not null,
+  target_id text not null,
+  relationship_type text not null,
+  created_by text not null,
+  created_at timestamptz not null,
+  check (relationship_type in ('ATTACHMENT','SOURCE','REFERENCE','OUTPUT'))
+);
+
+create index if not exists decision_document_links_target_idx
+  on decision_document_links (tenant_id, project_id, target_type, target_id);
+create index if not exists decision_document_links_document_idx
+  on decision_document_links (tenant_id, project_id, document_id);
+
 create table if not exists decision_evidence (
   id text primary key,
   tenant_id text not null,
@@ -171,6 +189,27 @@ create table if not exists recommendation_candidates (
   unique (recommendation_id, candidate_id)
 );
 
+create table if not exists recommendation_sections (
+  id text primary key,
+  tenant_id text not null,
+  project_id text not null,
+  recommendation_id text not null references recommendations(id),
+  section_type text not null,
+  title text not null,
+  section_order integer not null check (section_order >= 0),
+  content_mode text not null,
+  narrative text not null,
+  source_snapshot_id text references decision_snapshots(id),
+  visibility text not null,
+  confidentiality text not null,
+  check (content_mode in ('GENERATED','MANUAL','HYBRID')),
+  check (visibility in ('INTERNAL','PROJECT_TEAM','CLIENT','EXTERNAL_SHARED')),
+  check (confidentiality in ('PUBLIC','INTERNAL','CONFIDENTIAL','CLIENT_CONFIDENTIAL','HIGHLY_RESTRICTED'))
+);
+
+create index if not exists recommendation_sections_order_idx
+  on recommendation_sections (tenant_id, project_id, recommendation_id, section_order);
+
 create table if not exists recommendation_conditions (
   id text primary key,
   tenant_id text not null,
@@ -228,6 +267,37 @@ create table if not exists decision_acknowledgements (
 create index if not exists decision_acknowledgements_recommendation_idx
   on decision_acknowledgements (tenant_id, project_id, recommendation_id, created_at);
 
+create table if not exists report_templates (
+  id text primary key,
+  tenant_id text not null,
+  name text not null,
+  description text,
+  status text not null default 'ACTIVE',
+  current_version_id text,
+  created_by text not null,
+  created_at timestamptz not null,
+  check (status in ('ACTIVE','ARCHIVED'))
+);
+
+create index if not exists report_templates_tenant_idx on report_templates (tenant_id, status);
+
+create table if not exists report_template_versions (
+  id text primary key,
+  template_id text not null references report_templates(id),
+  version_number integer not null check (version_number > 0),
+  definition_json jsonb not null,
+  branding_json jsonb not null,
+  created_by text not null,
+  created_at timestamptz not null,
+  unique (template_id, version_number)
+);
+
+alter table report_templates
+  drop constraint if exists report_templates_current_version_fk;
+alter table report_templates
+  add constraint report_templates_current_version_fk foreign key (current_version_id)
+  references report_template_versions(id) deferrable initially deferred;
+
 create table if not exists deliverables (
   id text primary key,
   tenant_id text not null,
@@ -270,6 +340,29 @@ alter table deliverables
 alter table deliverables
   add constraint deliverables_current_version_fk foreign key (current_version_id)
   references deliverable_versions(id) deferrable initially deferred;
+
+create table if not exists data_room_manifests (
+  id text primary key,
+  tenant_id text not null,
+  project_id text not null,
+  deliverable_id text not null references deliverables(id),
+  created_by text not null,
+  created_at timestamptz not null
+);
+
+create table if not exists data_room_manifest_entries (
+  id text primary key,
+  manifest_id text not null references data_room_manifests(id) on delete cascade,
+  category text not null,
+  document_version_id text references decision_document_versions(id),
+  deliverable_version_id text references deliverable_versions(id),
+  candidate_id text,
+  entry_order integer not null check (entry_order >= 0),
+  check ((document_version_id is not null) <> (deliverable_version_id is not null))
+);
+
+create index if not exists data_room_manifest_entries_order_idx
+  on data_room_manifest_entries (manifest_id, entry_order);
 
 -- Platform convergence should add the authoritative tenant/project foreign keys and
 -- row-level security policies once Categories 1–3 establish the shared schema names.
