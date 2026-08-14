@@ -1,69 +1,52 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
+import { ConfigurationRequiredState, EmptyState } from "@/components/ui/workspace-states";
+import { DataTable, InlineStatus, WorkspaceToolbar } from "@/components/ui/workspace-primitives";
+import type { WorkspaceProjectRow } from "@/domains/projects-workflow/postgres";
+import styles from "./projects-workspace.module.css";
 
-const workflowSteps = [
-  ["1", "Define requirements", "Capture the client brief, mandatory constraints, preferred criteria and scenario assumptions."],
-  ["2", "Screen markets", "Evaluate candidate geographies, workforce, infrastructure and location intelligence against project requirements."],
-  ["3", "Evaluate properties", "Review sites and buildings, utilities, development readiness, due diligence and visit findings."],
-  ["4", "Make the decision", "Compare finalists, model costs and incentives, resolve risks and prepare the recommendation and deliverables."],
+function stageLabel(code: string): string {
+  return code.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+function dateLabel(value?: string): string {
+  if (!value) return "—";
+  const parsed = new Date(`${value.slice(0, 10)}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? value : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+}
+
+const columns = [
+  { key: "client", label: "Client" }, { key: "project", label: "Project" }, { key: "type", label: "Type" }, { key: "stage", label: "Stage" },
+  { key: "opening", label: "Target opening" }, { key: "lead", label: "Lead" }, { key: "next", label: "Next task" },
 ] as const;
 
-export function ProjectsWorkspace() {
+export function ProjectsWorkspace({ projects }: { projects: WorkspaceProjectRow[] }) {
+  const rows = projects.map((row) => ({
+    client: row.client.operatingName ?? row.client.legalName,
+    project: <div key={`${row.project.projectId}-project`}><Link className={styles.tableLink} href={`/projects/${encodeURIComponent(row.project.projectId)}`}>{row.project.name}</Link><div className={styles.subtle}>{row.project.engagementStatus}</div></div>,
+    type: row.project.projectType ?? row.project.facilityType ?? "—",
+    stage: <InlineStatus key={`${row.project.projectId}-stage`}>{stageLabel(row.project.stageCode)}</InlineStatus>,
+    opening: dateLabel(row.project.targetOpeningDate),
+    lead: row.leadEmail ?? "—",
+    next: row.nextTask ? <span className={row.nextTask.status === "BLOCKED" ? styles.attention : undefined} key={`${row.project.projectId}-next`}>{row.nextTask.title}</span> : "—",
+  }));
+
   return (
     <>
       <div className="page-header-with-action">
-        <PageHeader
-          eyebrow="Site selection workspace"
-          title="Projects"
-          description="Manage site-selection engagements from client requirements through market screening, property evaluation, due diligence, recommendation and client deliverables."
-        />
+        <PageHeader eyebrow="Engagements" title="Projects" description="Site-selection engagements and their current project work." />
         <Link className="button button-primary" href="/projects/new">Create Project</Link>
       </div>
+      <WorkspaceToolbar ariaLabel="Project list status"><InlineStatus>{projects.length} projects</InlineStatus></WorkspaceToolbar>
+      {projects.length ? <DataTable columns={columns} rows={rows} caption="Site-selection projects" /> : <EmptyState title="No projects yet" description="Create the first client engagement to begin working in project context." action={<Link className="button button-primary" href="/projects/new">Create Project</Link>} />}
+    </>
+  );
+}
 
-      <section className="card empty-state" aria-labelledby="projects-empty-title">
-        <div className="empty-state-mark" aria-hidden="true">+</div>
-        <div>
-          <h2 id="projects-empty-title">No projects yet</h2>
-          <p>Create your first site-selection project to define requirements and begin geographic screening.</p>
-        </div>
-        <Link className="button button-primary" href="/projects/new">Create Project</Link>
-      </section>
-
-      <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Site selection workflow</h2>
-            <p>One engagement workspace carries the decision from client brief to final recommendation.</p>
-          </div>
-        </div>
-        <div className="grid grid-4 workflow-grid">
-          {workflowSteps.map(([step, title, description]) => (
-            <article className="card workflow-card" key={step}>
-              <div className="workflow-step">{step}</div>
-              <h2>{title}</h2>
-              <p>{description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="section grid grid-3">
-        <article className="card attention-card">
-          <span className="card-kicker">Projects requiring attention</span>
-          <h2>Nothing requires attention</h2>
-          <p>Open risks, missing required information and upcoming deadlines will appear here when projects are active.</p>
-        </article>
-        <article className="card attention-card">
-          <span className="card-kicker">Upcoming visits</span>
-          <h2>No site visits scheduled</h2>
-          <p>Planned site visits will appear here with dates, candidates and itinerary context.</p>
-        </article>
-        <article className="card attention-card">
-          <span className="card-kicker">Recent deliverables</span>
-          <h2>No deliverables yet</h2>
-          <p>Approved comparisons, recommendation packages and reports will appear here.</p>
-        </article>
-      </section>
+export function ProjectInfrastructureNotice({ issues }: { issues: string[] }) {
+  return (
+    <>
+      <PageHeader eyebrow="Engagements" title="Projects" description="Project records require authoritative persistence and authenticated tenant context." />
+      <ConfigurationRequiredState title="Project workspace configuration required" description={issues.join(" ")} />
     </>
   );
 }
