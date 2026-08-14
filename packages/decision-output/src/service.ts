@@ -1,4 +1,5 @@
 import { assertRecommendationTransition, canEditRecommendation, evaluateRecommendationReadiness, projectForClient } from "./domain/policies.js";
+import { assertDeliverableTransition } from "./domain/deliverable-policy.js";
 import type {
   ActorContext,
   ClientDecisionAction,
@@ -7,6 +8,11 @@ import type {
   DecisionAcknowledgement,
   DecisionSnapshot,
   DecisionSnapshotReferences,
+  DocumentCategory,
+  DocumentLink,
+  DocumentLinkTargetType,
+  DocumentRecord,
+  DocumentVersion,
   DeliverableFormat,
   DeliverableRecord,
   DeliverableType,
@@ -17,6 +23,10 @@ import type {
   EvidenceTargetType,
   Id,
   ProjectQuestion,
+  RecommendationSection,
+  RecommendationSectionType,
+  ReportTemplateRecord,
+  ReportTemplateVersion,
   RecommendationCandidate,
   RecommendationCondition,
   RecommendationDisposition,
@@ -34,6 +44,38 @@ import type {
   DomainEventPort,
   IdPort,
 } from "./ports.js";
+
+export interface CreateDocumentInput {
+  projectId: Id;
+  clientId?: Id;
+  candidateId?: Id;
+  propertyId?: Id;
+  category: DocumentCategory;
+  title: string;
+  description?: string;
+  sourceOrganizationId?: Id;
+  sourceContactId?: Id;
+  confidentiality: DataClassification;
+  visibility: Visibility;
+}
+
+export interface AddDocumentVersionInput {
+  documentId: Id;
+  storageObjectId: Id;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  checksum: string;
+  effectiveDate?: string;
+  sourceDate?: string;
+}
+
+export interface LinkDocumentInput {
+  documentId: Id;
+  targetType: DocumentLinkTargetType;
+  targetId: Id;
+  relationshipType: DocumentLink["relationshipType"];
+}
 
 export interface CreateEvidenceInput {
   projectId: Id;
@@ -84,6 +126,18 @@ export interface AddRecommendationCandidateInput {
   confidentiality?: DataClassification;
 }
 
+export interface AddRecommendationSectionInput {
+  recommendationId: Id;
+  sectionType: RecommendationSectionType;
+  title: string;
+  order: number;
+  contentMode: RecommendationSection["contentMode"];
+  narrative: string;
+  sourceSnapshotId?: Id;
+  visibility?: Visibility;
+  confidentiality?: DataClassification;
+}
+
 export interface AddRecommendationConditionInput {
   recommendationId: Id;
   description: string;
@@ -93,6 +147,28 @@ export interface AddRecommendationConditionInput {
   dueDate?: string;
   visibility?: Visibility;
   confidentiality?: DataClassification;
+}
+
+export interface CreateReportTemplateInput {
+  name: string;
+  description?: string;
+}
+
+export interface AddReportTemplateVersionInput {
+  templateId: Id;
+  definition: Readonly<Record<string, unknown>>;
+  branding: Readonly<Record<string, unknown>>;
+}
+
+export interface CreateProjectQuestionInput {
+  projectId: Id;
+  candidateId?: Id;
+  question: string;
+  requestedFromUserId?: Id;
+  requestedFromRole?: string;
+  visibility?: Visibility;
+  confidentiality?: DataClassification;
+  dueDate?: string;
 }
 
 export interface CreateDeliverableInput {
@@ -115,6 +191,81 @@ export class DecisionOutputService {
     private readonly events: DomainEventPort,
     private readonly renderer: DeliverableRendererPort,
   ) {}
+
+  async createDocument(actor: ActorContext, input: CreateDocumentInput): Promise<DocumentRecord> {
+    await this.authorization.assertProjectAccess(actor, input.projectId, "MANAGE_DOCUMENTS");
+    const now = this.clock.now();
+    const record: DocumentRecord = {
+      id: this.ids.next("document"),
+      tenantId: actor.tenantId,
+      clientId: input.clientId,
+      projectId: input.projectId,
+      candidateId: input.candidateId,
+      propertyId: input.propertyId,
+      category: input.category,
+      title: input.title,
+      description: input.description,
+      sourceOrganizationId: input.sourceOrganizationId,
+      sourceContactId: input.sourceContactId,
+      confidentiality: input.confidentiality,
+      visibility: input.visibility,
+      status: "ACTIVE",
+      createdBy: actor.actorId,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await this.repository.saveDocument(record);
+    await this.publish("DocumentCreated", record.id, record.tenantId, record.projectId, now);
+    return record;
+  }
+
+  async addDocumentVersion(actor: ActorContext, input: AddDocumentVersionInput): Promise<DocumentVersion> {
+    const document = await this.requireDocument(input.documentId);
+    await this.authorization.assertProjectAccess(actor, document.projectId, "MANAGE_DOCUMENTS");
+    this.assertTenant(actor, document.tenantId);
+    if (input.sizeBytes < 0) throw new Error("Document size cannot be negative");
+    const versions = await this.repository.listDocumentVersions(document.id);
+    const now = this.clock.now();
+    const version: DocumentVersion = {
+      id: this.ids.next("document-version"),
+      documentId: document.id,
+      versionNumber: Math.max(0, ...versions.map((item) => item.versionNumber)) + 1,
+      storageObjectId: input.storageObjectId,
+      originalFilename: input.originalFilename,
+      mimeType: input.mimeType,
+      sizeBytes: input.sizeBytes,
+      checksum: input.checksum,
+      effectiveDate: input.effectiveDate,
+      sourceDate: input.sourceDate,
+      uploadedBy: actor.actorId,
+      uploadedAt: now,
+      supersedesVersionId: document.currentVersionId,
+    };
+    await this.repository.saveDocumentVersion(version);
+    await this.repository.saveDocument({ ...document, currentVersionId: version.id, updatedAt: now });
+    await this.publish("DocumentVersionCreated", version.id, document.tenantId, document.projectId, now);
+    return version;
+  }
+
+  async linkDocument(actor: ActorContext, input: LinkDocumentInput): Promise<DocumentLink> {
+    const document = await this.requireDocument(input.documentId);
+    await this.authorization.assertProjectAccess(actor, document.projectId, "MANAGE_DOCUMENTS");
+    this.assertTenant(actor, document.tenantId);
+    const now = this.clock.now();
+    const link: DocumentLink = {
+      id: this.ids.next("document-link"),
+      tenantId: actor.tenantId,
+      projectId: document.projectId,
+      documentId: document.id,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      relationshipType: input.relationshipType,
+      createdBy: actor.actorId,
+      createdAt: now,
+    };
+    await this.repository.saveDocumentLink(link);
+    return link;
+  }
 
   async createEvidence(actor: ActorContext, input: CreateEvidenceInput): Promise<EvidenceRecord> {
     await this.authorization.assertProjectAccess(actor, input.projectId, "CREATE_EVIDENCE");
@@ -230,7 +381,8 @@ export class DecisionOutputService {
     this.assertTenant(actor, existing.tenantId);
     assertRecommendationTransition(existing.status, to);
 
-    if (to === "FINAL" && readiness) {
+    if (to === "FINAL") {
+      if (!readiness) throw new Error("Recommendation finalization requires an explicit readiness assessment");
       const result = evaluateRecommendationReadiness(readiness);
       if (result.status !== "READY") {
         throw new Error(`Recommendation cannot be finalized: ${result.blockers.join("; ")}`);
@@ -300,6 +452,33 @@ export class DecisionOutputService {
     return record;
   }
 
+  async addRecommendationSection(
+    actor: ActorContext,
+    input: AddRecommendationSectionInput,
+  ): Promise<RecommendationSection> {
+    const recommendation = await this.requireRecommendation(input.recommendationId);
+    await this.authorization.assertProjectAccess(actor, recommendation.projectId, "MANAGE_RECOMMENDATION");
+    this.assertTenant(actor, recommendation.tenantId);
+    if (!canEditRecommendation(recommendation.status)) throw new Error("Final recommendations are immutable");
+    if (input.order < 0) throw new Error("Recommendation section order cannot be negative");
+    const record: RecommendationSection = {
+      id: this.ids.next("recommendation-section"),
+      tenantId: actor.tenantId,
+      projectId: recommendation.projectId,
+      recommendationId: recommendation.id,
+      sectionType: input.sectionType,
+      title: input.title,
+      order: input.order,
+      contentMode: input.contentMode,
+      narrative: input.narrative,
+      sourceSnapshotId: input.sourceSnapshotId,
+      visibility: input.visibility ?? recommendation.visibility,
+      confidentiality: input.confidentiality ?? recommendation.confidentiality,
+    };
+    await this.repository.saveRecommendationSection(record);
+    return record;
+  }
+
   async addRecommendationCondition(
     actor: ActorContext,
     input: AddRecommendationConditionInput,
@@ -350,6 +529,64 @@ export class DecisionOutputService {
     };
     await this.repository.saveRecommendationCondition(updated);
     return updated;
+  }
+
+  async createReportTemplate(actor: ActorContext, input: CreateReportTemplateInput): Promise<ReportTemplateRecord> {
+    await this.authorization.assertTenantAccess(actor, "MANAGE_REPORT_TEMPLATES");
+    const now = this.clock.now();
+    const record: ReportTemplateRecord = {
+      id: this.ids.next("report-template"),
+      tenantId: actor.tenantId,
+      name: input.name,
+      description: input.description,
+      status: "ACTIVE",
+      createdBy: actor.actorId,
+      createdAt: now,
+    };
+    await this.repository.saveReportTemplate(record);
+    return record;
+  }
+
+  async addReportTemplateVersion(
+    actor: ActorContext,
+    input: AddReportTemplateVersionInput,
+  ): Promise<ReportTemplateVersion> {
+    await this.authorization.assertTenantAccess(actor, "MANAGE_REPORT_TEMPLATES");
+    const template = await this.repository.getReportTemplate(input.templateId);
+    if (!template || template.tenantId !== actor.tenantId) throw new Error("Report template is outside the authorized tenant scope");
+    if (template.status !== "ACTIVE") throw new Error("Archived report templates cannot receive new versions");
+    const versions = await this.repository.listReportTemplateVersions(template.id);
+    const version: ReportTemplateVersion = {
+      id: this.ids.next("report-template-version"),
+      templateId: template.id,
+      versionNumber: Math.max(0, ...versions.map((item) => item.versionNumber)) + 1,
+      definition: input.definition,
+      branding: input.branding,
+      createdBy: actor.actorId,
+      createdAt: this.clock.now(),
+    };
+    await this.repository.saveReportTemplateVersion(version);
+    await this.repository.saveReportTemplate({ ...template, currentVersionId: version.id });
+    return version;
+  }
+
+  async createProjectQuestion(actor: ActorContext, input: CreateProjectQuestionInput): Promise<ProjectQuestion> {
+    await this.authorization.assertProjectAccess(actor, input.projectId, "PUBLISH_CLIENT_CONTENT");
+    const record: ProjectQuestion = {
+      id: this.ids.next("project-question"),
+      tenantId: actor.tenantId,
+      projectId: input.projectId,
+      candidateId: input.candidateId,
+      question: input.question,
+      requestedFromUserId: input.requestedFromUserId,
+      requestedFromRole: input.requestedFromRole,
+      visibility: input.visibility ?? "CLIENT",
+      confidentiality: input.confidentiality ?? "CLIENT_CONFIDENTIAL",
+      status: "OPEN",
+      dueDate: input.dueDate,
+    };
+    await this.repository.saveQuestion(record);
+    return record;
   }
 
   clientProjection(items: readonly ClientProjectionItem[]): ClientProjectionItem[] {
@@ -414,6 +651,11 @@ export class DecisionOutputService {
     if (!snapshot || snapshot.projectId !== input.projectId || snapshot.tenantId !== actor.tenantId) {
       throw new Error("Deliverables must bind to an authorized decision snapshot from the same project");
     }
+    const template = await this.repository.getReportTemplate(input.templateId);
+    const templateVersion = await this.repository.getReportTemplateVersion(input.templateVersionId);
+    if (!template || template.tenantId !== actor.tenantId || !templateVersion || templateVersion.templateId !== template.id) {
+      throw new Error("Deliverables must bind to an authorized report template version");
+    }
     const createdAt = this.clock.now();
     const record: DeliverableRecord = {
       id: this.ids.next("deliverable"),
@@ -442,6 +684,7 @@ export class DecisionOutputService {
     const deliverable = await this.requireDeliverable(deliverableId);
     await this.authorization.assertProjectAccess(actor, deliverable.projectId, "GENERATE_DELIVERABLE");
     this.assertTenant(actor, deliverable.tenantId);
+    assertDeliverableTransition(deliverable.status, "GENERATING");
 
     await this.repository.saveDeliverable({ ...deliverable, status: "GENERATING" });
     try {
@@ -470,6 +713,7 @@ export class DecisionOutputService {
         checksum: render.checksum,
       } as const;
       await this.repository.saveDeliverableVersion(version);
+      assertDeliverableTransition("GENERATING", "READY_FOR_REVIEW");
       const updated: DeliverableRecord = { ...deliverable, status: "READY_FOR_REVIEW", currentVersionId: version.id };
       await this.repository.saveDeliverable(updated);
       await this.publish("DeliverableGenerated", updated.id, updated.tenantId, updated.projectId, now);
@@ -478,6 +722,36 @@ export class DecisionOutputService {
       await this.repository.saveDeliverable({ ...deliverable, status: "GENERATION_FAILED" });
       throw error;
     }
+  }
+
+  async approveDeliverable(actor: ActorContext, deliverableId: Id): Promise<DeliverableRecord> {
+    const deliverable = await this.requireDeliverable(deliverableId);
+    await this.authorization.assertProjectAccess(actor, deliverable.projectId, "APPROVE_DELIVERABLE");
+    this.assertTenant(actor, deliverable.tenantId);
+    assertDeliverableTransition(deliverable.status, "APPROVED");
+    if (!deliverable.currentVersionId) throw new Error("A generated version is required before approval");
+    const updated: DeliverableRecord = { ...deliverable, status: "APPROVED" };
+    await this.repository.saveDeliverable(updated);
+    await this.publish("DeliverableApproved", updated.id, updated.tenantId, updated.projectId, this.clock.now());
+    return updated;
+  }
+
+  async publishDeliverable(actor: ActorContext, deliverableId: Id): Promise<DeliverableRecord> {
+    const deliverable = await this.requireDeliverable(deliverableId);
+    await this.authorization.assertProjectAccess(actor, deliverable.projectId, "PUBLISH_DELIVERABLE");
+    this.assertTenant(actor, deliverable.tenantId);
+    if (deliverable.confidentiality === "HIGHLY_RESTRICTED") throw new Error("Highly restricted deliverables cannot be client-published");
+    assertDeliverableTransition(deliverable.status, "PUBLISHED");
+    const updated: DeliverableRecord = { ...deliverable, status: "PUBLISHED", visibility: "CLIENT" };
+    await this.repository.saveDeliverable(updated);
+    await this.publish("DeliverablePublished", updated.id, updated.tenantId, updated.projectId, this.clock.now());
+    return updated;
+  }
+
+  private async requireDocument(id: Id): Promise<DocumentRecord> {
+    const record = await this.repository.getDocument(id);
+    if (!record) throw new Error("Document not found");
+    return record;
   }
 
   private async requireRecommendation(id: Id): Promise<RecommendationRecord> {
