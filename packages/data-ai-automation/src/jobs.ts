@@ -22,6 +22,13 @@ export interface Job<TPayload = unknown, TResult = unknown> {
   error?: string;
 }
 
+export interface JobQuery {
+  tenantId: string;
+  projectId?: string;
+  statuses?: readonly JobStatus[];
+  limit?: number;
+}
+
 export type JobHandler<TPayload = unknown, TResult = unknown> = (
   job: Readonly<Job<TPayload, TResult>>,
 ) => Promise<TResult>;
@@ -65,6 +72,24 @@ export class InMemoryJobQueue {
     this.#jobs.set(job.id, job);
     this.#idempotency.set(scopeKey, job.id);
     return job;
+  }
+
+  get(jobId: string, tenantId: string): Job | null {
+    const job = this.#jobs.get(jobId);
+    if (!job) return null;
+    if (job.tenantId !== tenantId) throw new Error("Cross-tenant job access denied");
+    return { ...job };
+  }
+
+  list(query: JobQuery): Job[] {
+    const limit = Math.max(1, Math.min(query.limit ?? 50, 200));
+    return [...this.#jobs.values()]
+      .filter((job) => job.tenantId === query.tenantId)
+      .filter((job) => !query.projectId || job.projectId === query.projectId)
+      .filter((job) => !query.statuses?.length || query.statuses.includes(job.status))
+      .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+      .slice(0, limit)
+      .map((job) => ({ ...job }));
   }
 
   async run(jobId: string): Promise<Job> {
