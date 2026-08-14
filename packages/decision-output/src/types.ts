@@ -103,11 +103,33 @@ export interface DocumentRecord {
   sourceContactId?: Id;
   confidentiality: DataClassification;
   visibility: Visibility;
-  currentVersionId: Id;
+  currentVersionId?: Id;
   status: "ACTIVE" | "SUPERSEDED" | "ARCHIVED";
   createdBy: Id;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
+}
+
+export type DocumentLinkTargetType =
+  | "PROJECT"
+  | "CANDIDATE"
+  | "PROPERTY"
+  | "REQUIREMENT"
+  | "RISK"
+  | "FINDING"
+  | "RECOMMENDATION"
+  | "DELIVERABLE";
+
+export interface DocumentLink {
+  id: Id;
+  tenantId: Id;
+  projectId: Id;
+  documentId: Id;
+  targetType: DocumentLinkTargetType;
+  targetId: Id;
+  relationshipType: "ATTACHMENT" | "SOURCE" | "REFERENCE" | "OUTPUT";
+  createdBy: Id;
+  createdAt: IsoTimestamp;
 }
 
 export interface DocumentVersion {
@@ -218,6 +240,39 @@ export interface RecommendationCandidate {
   confidentiality: DataClassification;
 }
 
+export type RecommendationSectionType =
+  | "EXECUTIVE_SUMMARY"
+  | "PROJECT_REQUIREMENTS"
+  | "METHODOLOGY"
+  | "GEOGRAPHIC_SCREENING"
+  | "MARKET_ANALYSIS"
+  | "PROPERTY_ANALYSIS"
+  | "WORKFORCE"
+  | "INFRASTRUCTURE"
+  | "COST"
+  | "INCENTIVES"
+  | "RISK"
+  | "FINALISTS"
+  | "RECOMMENDATION"
+  | "CONDITIONS"
+  | "NEXT_STEPS"
+  | "CUSTOM";
+
+export interface RecommendationSection {
+  id: Id;
+  tenantId: Id;
+  projectId: Id;
+  recommendationId: Id;
+  sectionType: RecommendationSectionType;
+  title: string;
+  order: number;
+  contentMode: "GENERATED" | "MANUAL" | "HYBRID";
+  narrative: string;
+  sourceSnapshotId?: Id;
+  visibility: Visibility;
+  confidentiality: DataClassification;
+}
+
 export type RecommendationConditionStatus = "OPEN" | "SATISFIED" | "WAIVED" | "FAILED";
 
 export interface RecommendationCondition {
@@ -268,6 +323,27 @@ export interface DecisionAcknowledgement {
   clientUserId: Id;
   action: ClientDecisionAction;
   comment?: string;
+  createdAt: IsoTimestamp;
+}
+
+export interface ReportTemplateRecord {
+  id: Id;
+  tenantId: Id;
+  name: string;
+  description?: string;
+  status: "ACTIVE" | "ARCHIVED";
+  currentVersionId?: Id;
+  createdBy: Id;
+  createdAt: IsoTimestamp;
+}
+
+export interface ReportTemplateVersion {
+  id: Id;
+  templateId: Id;
+  versionNumber: number;
+  definition: Readonly<Record<string, unknown>>;
+  branding: Readonly<Record<string, unknown>>;
+  createdBy: Id;
   createdAt: IsoTimestamp;
 }
 
@@ -351,4 +427,23 @@ export interface RecommendationReadinessResult {
   status: "READY" | "REVIEW_REQUIRED";
   blockers: string[];
   warnings: string[];
+}
+
+export interface DataRoomManifestEntry {
+  id: Id;
+  category: string;
+  documentVersionId?: Id;
+  deliverableVersionId?: Id;
+  candidateId?: Id;
+  order: number;
+}
+
+export interface DataRoomManifest {
+  id: Id;
+  tenantId: Id;
+  projectId: Id;
+  deliverableId: Id;
+  entries: readonly DataRoomManifestEntry[];
+  createdBy: Id;
+  createdAt: IsoTimestamp;
 }
