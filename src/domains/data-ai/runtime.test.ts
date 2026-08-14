@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORY6_METRIC_DEFINITIONS } from "../../../packages/location-intelligence/src/metricCatalog";
+import { CATEGORY6_METRIC_DEFINITIONS } from "@accelssa/location-intelligence";
 import { canonicalMetricCatalog, createCanonicalMetricRegistry, freshnessPolicyForMetric } from "./canonical-registry";
 import { getAiProviderConfiguration, integrationRegistryView } from "./integration-registry";
 import { operationalSnapshot } from "./runtime-status";
@@ -47,10 +47,50 @@ describe("Category 12 product runtime", () => {
     expect(JSON.stringify(state)).not.toContain("secret-value");
   });
 
-  it("reports limited readiness rather than a fake healthy state when dependencies are absent", () => {
-    const snapshot = operationalSnapshot(emptyEnvironment, new Date("2026-08-14T00:00:00.000Z"));
+  it("reports limited readiness rather than a fake healthy state when the core store is absent", async () => {
+    const snapshot = await operationalSnapshot({
+      environment: emptyEnvironment,
+      now: new Date("2026-08-14T00:00:00.000Z"),
+    });
     expect(snapshot.readiness).toBe("LIMITED");
-    expect(snapshot.capabilities.find((capability) => capability.id === "job-history")?.status).toBe("UNAVAILABLE");
+    expect(snapshot.capabilities.find((capability) => capability.id === "job-history")?.status)
+      .toBe("NEEDS_CONFIGURATION");
+  });
+
+  it("reports core readiness and real tenant job availability independently from optional providers", async () => {
+    const environment = { DATABASE_URL: "postgres://configured" };
+    const snapshot = await operationalSnapshot({
+      environment,
+      tenantId: "tenant_a",
+      now: new Date("2026-08-14T00:00:00.000Z"),
+      probeDatabase: async () => ({ ok: true }),
+      listJobs: async ({ tenantId }) => [{
+        id: "job_1",
+        type: "metric_refresh",
+        status: "RUNNING",
+        progress: 45,
+        attempt: 1,
+        maxAttempts: 3,
+        createdAt: "2026-08-14T00:00:00.000Z",
+        updatedAt: "2026-08-14T00:01:00.000Z",
+        ...(tenantId === "tenant_a" ? {} : { errorMessage: "wrong tenant" }),
+      }],
+    });
+    expect(snapshot.readiness).toBe("READY");
+    expect(snapshot.capabilities.find((capability) => capability.id === "job-history")?.status).toBe("CONFIGURED");
+    expect(snapshot.backgroundJobs).toHaveLength(1);
+    expect(snapshot.backgroundJobs[0]?.type).toBe("metric_refresh");
+    expect(snapshot.capabilities.find((capability) => capability.id === "external-market-data")?.status).toBe("UNAVAILABLE");
+  });
+
+  it("turns a configured but unreachable core store into an error state", async () => {
+    const snapshot = await operationalSnapshot({
+      environment: { DATABASE_URL: "postgres://configured" },
+      tenantId: "tenant_a",
+      probeDatabase: async () => ({ ok: false, message: "Project data store could not be reached." }),
+    });
+    expect(snapshot.readiness).toBe("ERROR");
+    expect(snapshot.capabilities.find((capability) => capability.id === "authoritative-store")?.status).toBe("ERROR");
   });
 
   it("provides working safe catalog search without inventing project records", () => {
