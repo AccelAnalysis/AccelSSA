@@ -1,2 +1,5 @@
-import { ModulePlaceholder } from "@/components/ui/module-placeholder";
-export default function Page(){ return <ModulePlaceholder path="/properties" />; }
+import { PropertiesWorkspace } from "@/components/workspace/properties-workspace";
+
+export default function PropertiesPage() {
+  return <PropertiesWorkspace />;
+}
