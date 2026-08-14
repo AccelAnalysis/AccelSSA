@@ -1,0 +1,33 @@
+name: Category 05 GIS
+
+on:
+  push:
+    paths:
+      - 'packages/gis/**'
+      - 'docs/architecture/category-05-gis-spatial-analysis.md'
+      - '.github/workflows/category-05-gis.yml'
+  pull_request:
+    paths:
+      - 'packages/gis/**'
+      - 'docs/architecture/category-05-gis-spatial-analysis.md'
+      - '.github/workflows/category-05-gis.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/gis
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: packages/gis/package.json
+      - run: npm install --ignore-scripts
+      - run: npm run typecheck
+      - run: npm test
