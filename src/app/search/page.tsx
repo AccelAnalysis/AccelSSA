@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { PageHeader } from "@/components/ui/page-header";
+import { isFirmAdministrator, resolveWorkspaceAccess } from "@/domains/identity-security/request-access";
 import { searchApplicationCatalog } from "@/domains/data-ai/search-runtime";
 
 export const dynamic = "force-dynamic";
@@ -9,16 +11,18 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const { q = "" } = await searchParams;
+  const [{ q = "" }, requestHeaders] = await Promise.all([searchParams, headers()]);
+  const access = await resolveWorkspaceAccess(requestHeaders.get("cookie"));
   const query = q.trim();
-  const results = query ? searchApplicationCatalog(query) : [];
+  const includeAdministration = isFirmAdministrator(access);
+  const results = query ? searchApplicationCatalog(query, { includeAdministration }) : [];
 
   return (
     <>
       <PageHeader
         eyebrow="Search"
         title="Global Search"
-        description="Find AccelSSA workspaces, canonical metrics and configured services. Authorized project records appear only when project indexing is connected."
+        description="Find workspaces you can access. Authorized project records appear only when project indexing is connected."
       />
 
       <form className="card" method="get" action="/search" role="search">
@@ -28,7 +32,7 @@ export default async function SearchPage({
             id="global-search"
             name="q"
             defaultValue={query}
-            placeholder="Search projects, locations, metrics or settings"
+            placeholder="Search projects or workspaces"
             aria-label="Search AccelSSA"
           />
           <button className="button button-primary" type="submit">Search</button>
@@ -61,14 +65,14 @@ export default async function SearchPage({
           ) : (
             <div className="card empty-state">
               <div className="empty-state-mark" aria-hidden="true">•</div>
-              <div><h2>No results</h2><p>Try a workspace name, metric, or integration.</p></div>
+              <div><h2>No results</h2><p>Try another workspace or project term.</p></div>
             </div>
           )}
         </section>
       ) : (
         <section className="section card">
           <h2>Search scope</h2>
-          <p>Workspace navigation, canonical metric definitions and integration status are available now. Project and client records are not indexed until an authorized project-search adapter is connected.</p>
+          <p>Workspace navigation is available now. Project and client records will appear only from the authorized project index.</p>
         </section>
       )}
     </>
