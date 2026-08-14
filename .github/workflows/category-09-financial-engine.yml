@@ -1,0 +1,33 @@
+name: Category 9 Financial Engine
+
+on:
+  push:
+    branches:
+      - feat/category-09-financial-modeling-incentives
+    paths:
+      - "packages/financial-engine/**"
+      - ".github/workflows/category-09-financial-engine.yml"
+  pull_request:
+    paths:
+      - "packages/financial-engine/**"
+      - ".github/workflows/category-09-financial-engine.yml"
+
+jobs:
+  test-financial-engine:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/financial-engine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/financial-engine/package.json
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Build and test
+        run: npm test
