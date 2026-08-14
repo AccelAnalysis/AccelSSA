@@ -27,10 +27,11 @@ describe("Category 12 route security and truthfulness", () => {
     expect(integrations).not.toContain("GOOGLE_APPLICATION_CREDENTIALS");
   });
 
-  it("keeps the AI assistant non-interactive until authoritative project grounding exists", async () => {
+  it("keeps the AI assistant non-interactive until authoritative project data exists", async () => {
     const assistant = await source("src/app/assistant/page.tsx");
-    expect(assistant).toContain("Authorized project grounding");
+    expect(assistant).toContain("Project data");
     expect(assistant).toContain("Unavailable");
+    expect(assistant).toContain("will not generate an answer");
     expect(assistant).not.toMatch(/<form\b/);
     expect(assistant).not.toMatch(/type=["']submit["']/);
   });
