@@ -1,0 +1,18 @@
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
+
+env:
+  - variable: ACCELSSA_FIREBASE_PROJECT_ID
+    value: accelprocure
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: ACCELSSA_FIREBASE_APP_ID
+    value: 1:479058229962:web:ea47507361c34560ea1233
+    availability:
+      - BUILD
+      - RUNTIME
