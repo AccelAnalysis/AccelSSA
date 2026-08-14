@@ -56,10 +56,18 @@ jobs:
           cache: npm
           cache-dependency-path: package.json
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ACCELPROCURE }}
+      - name: Configure Firebase service-account credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ACCELPROCURE }}
+        run: |
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT_JSON}" ]; then
+            echo "::error::Missing GitHub secret FIREBASE_SERVICE_ACCOUNT_ACCELPROCURE. Store the CI service-account JSON as that repository or production-environment secret, then rerun this workflow."
+            exit 1
+          fi
+          CREDENTIALS_FILE="${RUNNER_TEMP}/accelprocure-firebase-service-account.json"
+          printf '%s' "${FIREBASE_SERVICE_ACCOUNT_JSON}" > "${CREDENTIALS_FILE}"
+          chmod 600 "${CREDENTIALS_FILE}"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${CREDENTIALS_FILE}" >> "${GITHUB_ENV}"
 
       - name: Verify Firebase App Hosting backend
         run: |
@@ -87,6 +95,10 @@ jobs:
             --project "${FIREBASE_PROJECT_ID}" \
             --location "${FIREBASE_APPHOSTING_LOCATION}" \
             --non-interactive | tee /tmp/accelssa-backend.txt
+
+      - name: Remove service-account credential file
+        if: always()
+        run: rm -f "${GOOGLE_APPLICATION_CREDENTIALS:-}"
 
       - name: Release summary
         run: |
