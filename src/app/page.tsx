@@ -7,7 +7,7 @@ export default async function HomePage() {
   if (!configuration.ready) return <ProjectInfrastructureNotice issues={configuration.issues} />;
   try {
     const result = await readProjectList(await headers());
-    return <ProjectsWorkspace projects={result.projects} riskDataAvailable={result.riskDataAvailable} />;
+    return <ProjectsWorkspace projects={result.projects} />;
   } catch (error) {
     const issues = error instanceof ProjectInfrastructureError ? error.issues : ["Projects could not be read from the authoritative project store."];
     return <ProjectInfrastructureNotice issues={issues} />;
