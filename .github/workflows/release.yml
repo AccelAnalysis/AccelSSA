@@ -1,7 +1,6 @@
 name: Firebase Release
 
 on:
-  pull_request:
   push:
     branches: [main]
   workflow_dispatch:
@@ -41,7 +40,6 @@ jobs:
         run: npm run check
 
   deploy:
-    if: github.event_name != 'pull_request'
     needs: verify
     runs-on: ubuntu-latest
     environment: production
