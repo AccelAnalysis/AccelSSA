@@ -1,7 +1,8 @@
 import { PrimaryNavigation } from "./primary-navigation";
 import { Topbar } from "./topbar";
+import type { AccountMenuProps } from "@/components/auth/account-menu";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, account }: { children: React.ReactNode; account: AccountMenuProps }) {
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Application navigation">
@@ -15,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <PrimaryNavigation />
       </aside>
       <div className="shell-main">
-        <Topbar />
+        <Topbar account={account} />
         <main className="content">{children}</main>
       </div>
     </div>

@@ -1,0 +1,9 @@
+.menu { position: relative; }
+.summary { list-style: none; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.summary::-webkit-details-marker { display: none; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #e8edf3; font-size: 12px; font-weight: 800; }
+.label { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.popover { position: absolute; z-index: 30; right: 0; top: calc(100% + 8px); width: 240px; display: grid; gap: 8px; padding: 14px; border: 1px solid #d9dee5; border-radius: 8px; background: white; box-shadow: 0 12px 30px rgb(18 24 33 / 12%); font-size: 13px; }
+.popover span { color: #68717d; font-size: 12px; }
+.popover a, .popover button { color: #245b91; font: inherit; text-align: left; }
+.popover button { border: 0; background: transparent; padding: 0; cursor: pointer; }
