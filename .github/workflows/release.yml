@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: accelssa-release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/accelanalysis/accelssa
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install workspace dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify converged platform
+        run: npm run check
+
+      - name: Build release image
+        run: |
+          docker build \
+            --label org.opencontainers.image.revision=${GITHUB_SHA} \
+            --label org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY} \
+            -t "${IMAGE}:sha-${GITHUB_SHA}" \
+            -t "${IMAGE}:latest" \
+            .
+
+      - name: Smoke test release image
+        run: |
+          docker run -d --name accelssa-smoke -p 3000:3000 "${IMAGE}:sha-${GITHUB_SHA}"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/api/v1/health >/tmp/accelssa-health.json; then
+              cat /tmp/accelssa-health.json
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs accelssa-smoke
+          exit 1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish release image
+        run: |
+          docker push "${IMAGE}:sha-${GITHUB_SHA}"
+          docker push "${IMAGE}:latest"
+
+      - name: Release summary
+        run: |
+          echo "## AccelSSA release" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated the converged application, domain suites, production Next.js build, and container health endpoint." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Image: \`${IMAGE}:sha-${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Latest: \`${IMAGE}:latest\`" >> "$GITHUB_STEP_SUMMARY"
