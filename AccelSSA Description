@@ -1,0 +1,534 @@
+I would build a **B2B, multi-tenant Site Selection Consultant Operating System**—a map-centered application that manages the entire consulting engagement from the first client conversation through the final location recommendation.
+
+It should not simply answer, “What locations look good?” It should answer:
+
+> **Given this company's requirements, which markets and properties are viable, why, what risks remain, and what should the client do next?**
+
+### The product concept
+
+Think of the application as the combination of a:
+
+**GIS platform + market intelligence system + site database + project workspace + scoring engine + CRM + client portal + report generator.**
+
+Existing platforms already solve pieces of this problem. ArcGIS Business Analyst provides demographic, market, trade-area, and suitability analysis; Lightcast provides deep labor-market intelligence; and Placer.ai provides foot-traffic and location intelligence. ([Esri][1]) A consultant-focused product should sit **above and between those systems**, turning disparate data into a repeatable consulting process.
+
+## The core workflow
+
+The application should revolve around a **Site Selection Project**.
+
+A consultant creates:
+
+**Acme Manufacturing — Southeast U.S. Expansion**
+
+and everything else belongs to that project.
+
+The workflow becomes:
+
+**Client Brief → Requirements → Geographic Screening → Market Comparison → Property Search → Due Diligence → Shortlist → Site Visit → Negotiation/Incentives → Recommendation**
+
+### 1. Client Requirements Builder
+
+This is where the consultant translates the client's business problem into a structured site-selection model.
+
+For example:
+
+| Requirement        | Example                     |
+| ------------------ | --------------------------- |
+| Operation          | Advanced manufacturing      |
+| Investment         | $85M                        |
+| Employment         | 220                         |
+| Avg. wage          | $61,000                     |
+| Building/site      | 150,000 SF / 40+ acres      |
+| Electric           | 10 MW                       |
+| Water              | 500,000 GPD                 |
+| Highway            | ≤15 minutes                 |
+| Airport            | ≤60 minutes                 |
+| Port               | ≤120 minutes                |
+| Labor shed         | 45-minute commute           |
+| Target occupations | CNC, maintenance, engineers |
+| Opening            | Q3 2028                     |
+
+Every requirement should be classified as:
+
+**Mandatory / Preferred / Informational**
+
+and, where appropriate, given a weight.
+
+That distinction is extremely important.
+
+A market that fails a mandatory 10 MW electric requirement shouldn't rank highly because it has great demographics.
+
+---
+
+# 2. Map-centered Market Screening
+
+The project's main analytical interface should be the map.
+
+The consultant could switch geographic units between:
+
+**State → Metro → County → ZIP → Census tract → Parcel/property**
+
+and apply project criteria.
+
+For example:
+
+> Show counties within 60 minutes of an interstate, with a manufacturing labor force above 15,000, average production wages below $26/hour, population growth above 2%, and industrial properties greater than 100,000 SF.
+
+The system then visually identifies:
+
+**Qualified**
+
+**Marginal**
+
+**Disqualified**
+
+markets.
+
+But unlike a standard GIS application, clicking a geography should show **why it scored the way it did**.
+
+---
+
+# 3. The Site Selection Scorecard
+
+This should become one of the application's signature capabilities.
+
+Suppose there are 40 candidate counties.
+
+The consultant might define:
+
+| Factor           | Weight |
+| ---------------- | -----: |
+| Workforce        |    30% |
+| Operating cost   |    20% |
+| Logistics        |    15% |
+| Real estate      |    15% |
+| Utilities        |    10% |
+| Business climate |     5% |
+| Quality of life  |     5% |
+
+The app calculates scores but allows the consultant to create multiple scenarios:
+
+**Workforce Priority**
+
+**Lowest Cost**
+
+**Logistics Priority**
+
+**Balanced Scenario**
+
+This avoids pretending that site selection produces one mathematically "correct" answer.
+
+The app should distinguish between **data-driven scores, consultant judgments, and hard constraints**.
+
+---
+
+# 4. Workforce Intelligence
+
+For industrial and office projects in particular, workforce needs to be much deeper than a few unemployment statistics.
+
+The consultant should be able to enter required occupations and see:
+
+* employment by occupation;
+* estimated available workforce;
+* wages;
+* historic wage growth;
+* projected growth;
+* job postings;
+* competing employers;
+* industry concentration;
+* occupational concentration;
+* commuting patterns;
+* educational attainment;
+* graduates;
+* training providers;
+* community colleges;
+* relevant degree/certificate programs.
+
+Lightcast explicitly supports market-selection use cases based on labor supply, demand, skills, wages, and competitive labor markets, which illustrates how deep this component can become. ([Lightcast][2])
+
+The application's advantage would be connecting workforce findings directly to **the client's project requirements**.
+
+---
+
+# 5. Sites & Buildings
+
+This deserves its own first-class module—not merely map markers.
+
+Each property should have a structured record containing things like:
+
+**Real estate**
+
+* acreage;
+* available SF;
+* ownership;
+* asking price;
+* lease rate;
+* zoning;
+* parcel boundaries;
+* expansion capacity.
+
+**Utilities**
+
+* electricity;
+* gas;
+* water;
+* wastewater;
+* broadband.
+
+**Transportation**
+
+* interstate;
+* highway;
+* rail;
+* port;
+* airport.
+
+**Development readiness**
+
+* grading;
+* environmental status;
+* wetlands;
+* geotechnical work;
+* permitting;
+* site certification;
+* estimated development timeline.
+
+**Evidence**
+
+* documents;
+* engineering studies;
+* maps;
+* photographs;
+* contact information;
+* source;
+* last verified date.
+
+The contribution model you've already envisioned fits extremely well here: economic developers, brokers, developers, and other authorized contributors could submit property availability that appears in the Locations map, subject to verification and freshness controls.
+
+---
+
+# 6. Market Comparison
+
+Once the consultant narrows perhaps 50 markets to 10, the app should switch from discovery to comparison.
+
+Select:
+
+**Richmond, VA
+Greenville, SC
+Greensboro, NC
+Savannah, GA**
+
+and generate side-by-side comparisons automatically.
+
+The consultant could compare hundreds of metrics but pin perhaps 20 to the client's **Decision Scorecard**.
+
+This becomes much more useful than exporting datasets into Excel and manually rebuilding comparison tables for every engagement.
+
+---
+
+# 7. Cost Modeling
+
+There should be a project-specific operating-cost calculator covering:
+
+* wages;
+* payroll burden;
+* electricity;
+* natural gas;
+* water/sewer;
+* real estate;
+* property taxes;
+* sales/use taxes;
+* transportation;
+* construction;
+* occupancy;
+* incentives.
+
+Then show:
+
+**Year 1 cost**
+
+**5-year cost**
+
+**10-year cost**
+
+and
+
+**NPV**
+
+by location.
+
+The consultant could create assumptions and scenarios instead of hardcoding supposed costs.
+
+---
+
+# 8. Incentives
+
+Incentives should be treated as a financial model rather than a list of programs.
+
+Example:
+
+**Virginia Candidate**
+
+Gross incentives: $6.4M
+Likely realizable: $4.7M
+10-year NPV: $3.8M
+
+And underneath:
+
+* grant;
+* tax credit;
+* training support;
+* infrastructure assistance;
+* property-tax arrangement;
+* eligibility;
+* performance requirements;
+* clawbacks;
+* application deadline;
+* confidence level.
+
+This is particularly valuable because it allows consultants to separate **advertised value from probable realized value**.
+
+---
+
+# 9. Site Readiness & Risk
+
+Each candidate should have an explicit risk register.
+
+For example:
+
+**Greenville Site 4**
+
+🟢 Workforce
+🟢 Interstate access
+🟢 Electric capacity
+🟡 Wastewater expansion required
+🟡 Rezoning required
+🔴 Unknown wetlands delineation
+
+Then calculate:
+
+**Market Attractiveness: 87/100**
+
+**Site Readiness: 63/100**
+
+Those are different questions and should remain separate.
+
+---
+
+# 10. Shortlist Workspace
+
+When candidates advance, they should enter a visual pipeline:
+
+**Long List → Screened → Shortlist → Finalist → Site Visit → Negotiation → Selected → Eliminated**
+
+Every elimination should retain a reason.
+
+For example:
+
+> Eliminated: insufficient wastewater capacity.
+
+That creates an auditable decision trail.
+
+---
+
+# 11. Site Visit Mode
+
+This could make the product unusually valuable to consultants.
+
+When traveling, the consultant opens the project on a phone/tablet.
+
+For each stop:
+
+**8:30 AM — Site A**
+
+Map/navigation
+Property profile
+Local contacts
+Open questions
+Documents
+Photos
+Notes
+Utilities checklist
+Client comments
+
+Photos and notes automatically attach to the candidate property.
+
+Afterward, AI can produce:
+
+> **Site Visit Findings — Site A**
+
+rather than making the consultant reconstruct three days of notes manually.
+
+---
+
+# 12. Client Portal
+
+Clients should not need access to the consultant's entire working environment.
+
+Give them a clean project portal showing:
+
+**Project Status**
+
+**Markets Under Review**
+
+**Shortlisted Locations**
+
+**Comparison**
+
+**Maps**
+
+**Documents**
+
+**Outstanding Questions**
+
+**Recommendations**
+
+The consultant decides what becomes client-visible.
+
+That preserves the value of the professional analysis rather than exposing all internal notes and incomplete work.
+
+---
+
+# 13. AI Site Selection Copilot
+
+AI should assist the consultant rather than replace the scoring engine.
+
+Useful commands could be:
+
+> "Explain why Greenville outranks Savannah."
+
+> "Which candidate has the greatest workforce risk?"
+
+> "Find markets that barely failed our original screen."
+
+> "What information is missing for Site 7?"
+
+> "Compare the finalists for our CEO."
+
+> "Create an executive summary."
+
+> "Identify contradictory data."
+
+> "What changed since we last evaluated these properties?"
+
+The AI should always be able to trace conclusions to the underlying data.
+
+**Source, geography, vintage, calculation and consultant override should all be visible.**
+
+---
+
+# 14. Automatic Deliverables
+
+This is where the application could save consultants enormous amounts of time.
+
+One project database could produce:
+
+**Market Screening Report**
+
+**Labor Market Analysis**
+
+**Site Comparison Matrix**
+
+**Property Profiles**
+
+**Site Visit Book**
+
+**Operating Cost Comparison**
+
+**Incentive Analysis**
+
+**Executive Recommendation**
+
+**Board Presentation**
+
+**Client Data Room**
+
+Instead of rebuilding PowerPoints, Excel sheets, Word reports, maps and tables independently, they become different presentations of the **same underlying project model**.
+
+---
+
+# Recommended navigation
+
+I would keep the actual product surprisingly simple:
+
+**Projects | Locations | Properties | Analysis | Visits | Deliverables | Contacts**
+
+Then inside a project:
+
+**Overview**
+
+**Requirements**
+
+**Markets**
+
+**Properties**
+
+**Workforce**
+
+**Infrastructure**
+
+**Costs**
+
+**Incentives**
+
+**Risks**
+
+**Shortlist**
+
+**Visits**
+
+**Recommendation**
+
+**Files**
+
+This keeps the dedicated **Locations** concept you've already established, while avoiding turning the interface into an RFP-management system.
+
+---
+
+# The real differentiator
+
+The competitive advantage should not be:
+
+> "We have maps."
+
+Esri already has exceptionally sophisticated mapping and site-evaluation capabilities. ([Esri][1])
+
+Nor:
+
+> "We have labor data."
+
+Lightcast specializes there. ([Lightcast][3])
+
+Nor simply:
+
+> "We have location analytics."
+
+Placer.ai already provides significant location and property intelligence. ([Placer.ai][4])
+
+The differentiated proposition is:
+
+> **Site Selection Assistance turns client requirements, external datasets, properties, consultant judgment and due diligence into a defensible location decision.**
+
+That's a much bigger product.
+
+## What I would build first
+
+The first release doesn't need every data integration. I would focus on six things:
+
+1. **Project/Client Brief**
+2. **Requirements & weighted scoring model**
+3. **Interactive Locations/Properties map**
+4. **Market + property comparison workspace**
+5. **Shortlist and consultant findings**
+6. **One-click client report**
+
+Then add workforce APIs, operating-cost models, incentives, site visits, automated monitoring and deeper AI.
+
+That MVP already solves a genuine consultant problem: **taking a messy, multi-source site-selection process and turning it into a structured, repeatable, client-facing decision system.**
+
+And longer term, the same architecture could support two distinct products: **Site Selection Assistance Professional** for consultants and **Site Selection Assistance Client** for companies conducting expansions or relocations—with consultants acting as the professional layer between the company's requirements and the final decision.
+
+[1]: https://www.esri.com/en-us/arcgis/products/arcgis-business-analyst/overview?utm_source=chatgpt.com "Demographic Mapping & Site Selection Software | ArcGIS Business Analyst"
+[2]: https://docs.lightcast.io/lightcast-api/docs/choosing-your-use-case?utm_source=chatgpt.com "Choosing Your Use Case"
+[3]: https://lightcast.io/?utm_source=chatgpt.com "Lightcast | The Standard for Labor Market Intelligence"
+[4]: https://www.placer.ai/?utm_source=chatgpt.com "Location Intelligence & Foot Traffic Data Software – Placer.ai"
