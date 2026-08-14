@@ -4,10 +4,7 @@ import {
   type MetricDefinition,
   type MetricKey,
 } from "../../../packages/data-ai-automation/src/index";
-import {
-  CATEGORY6_METRIC_DEFINITIONS,
-  type METRICS,
-} from "../../../packages/location-intelligence/src/metricCatalog";
+import { CATEGORY6_METRIC_DEFINITIONS } from "../../../packages/location-intelligence/src/metricCatalog";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -70,8 +67,3 @@ export function freshnessPolicyForMetric(metricKey: MetricKey): FreshnessPolicy 
     ageFrom: "observationDate",
   };
 }
-
-// Compile-time guard: keep this adapter attached to the Category 6 canonical vocabulary.
-type Category6MetricKey = (typeof METRICS)[keyof typeof METRICS];
-const _canonicalMetricKeyGuard: Category6MetricKey | null = null;
-void _canonicalMetricKeyGuard;

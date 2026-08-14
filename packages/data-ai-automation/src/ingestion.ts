@@ -61,6 +61,7 @@ export function prepareCanonicalObservation(input: {
   const definition = input.registry.require(input.observation.metricKey);
   const units = input.units ?? new UnitRegistry();
   const quality = input.observation.quality ?? (input.observation.value === null ? "MISSING" : "VALID");
+  const lineageNodeId = `metric-observation:${input.observation.observationId}`;
 
   let value = input.observation.value;
   let unit: string | undefined;
@@ -79,7 +80,7 @@ export function prepareCanonicalObservation(input: {
     quality,
     source: input.observation.source,
     retrievedAt: input.observation.retrievedAt,
-    lineageNodeId: `metric-observation:${input.observation.observationId}`,
+    lineageNodeId,
     ...(input.observation.projectId !== undefined ? { projectId: input.observation.projectId } : {}),
     ...(unit !== undefined ? { unit } : {}),
     ...(input.observation.observationDate !== undefined
@@ -110,7 +111,7 @@ export function prepareCanonicalObservation(input: {
     label: input.observation.source.dataset ?? input.observation.source.providerId,
   };
   const observationNode: LineageNode = {
-    id: observation.lineageNodeId,
+    id: lineageNodeId,
     type: "metric_observation",
     label: definition.name,
   };
