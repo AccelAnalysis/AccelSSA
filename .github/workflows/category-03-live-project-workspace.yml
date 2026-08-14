@@ -1,0 +1,36 @@
+name: Category 03 Live Project Workspace
+
+on:
+  pull_request:
+    paths:
+      - "src/app/projects/**"
+      - "src/domains/projects-workflow/**"
+      - "src/components/workspace/project*"
+      - "src/components/ui/module-placeholder.tsx"
+      - "src/app/locations/page.tsx"
+      - "src/app/properties/page.tsx"
+      - "src/app/analysis/page.tsx"
+      - "src/app/visits/page.tsx"
+      - "src/app/deliverables/page.tsx"
+      - "db/migrations/0003_projects_workflow.sql"
+      - ".github/workflows/category-03-live-project-workspace.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Tests
+        run: npm test
+      - name: Full repository check
+        run: npm run check

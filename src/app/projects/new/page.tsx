@@ -1,22 +1,19 @@
-import Link from "next/link";
-import { PageHeader } from "@/components/ui/page-header";
-import { ProjectCreateForm } from "@/components/projects/project-create-form";
+import { headers } from "next/headers";
+import { ProjectCreateForm } from "@/components/workspace/project-create-form";
+import { ProjectInfrastructureNotice } from "@/components/workspace/projects-workspace";
+import { ProjectInfrastructureError, projectInfrastructureStatus, verifyProjectRuntime } from "@/domains/projects-workflow/runtime";
 
-export default function NewProjectPage() {
-  const configured = Boolean(process.env.DATABASE_URL);
-  return (
-    <>
-      <div className="page-header-with-action">
-        <PageHeader eyebrow="Projects" title="Create Project" description="Establish the client, operating requirements and timeline for a new site-selection engagement." />
-        <Link className="button button-secondary" href="/projects">Cancel</Link>
-      </div>
-      {configured ? (
-        <ProjectCreateForm />
-      ) : (
-        <div className="inline-notice" role="status">
-          Project creation is unavailable until the authoritative PostgreSQL connection (`DATABASE_URL`) is configured.
-        </div>
-      )}
-    </>
-  );
+export default async function NewProjectPage({ searchParams }: { searchParams: Promise<{ state?: string }> }) {
+  const configuration = projectInfrastructureStatus();
+  if (!configuration.ready) return <ProjectInfrastructureNotice issues={configuration.issues} />;
+
+  try {
+    await verifyProjectRuntime(await headers());
+  } catch (error) {
+    const issues = error instanceof ProjectInfrastructureError ? error.issues : ["Project persistence could not be verified."];
+    return <ProjectInfrastructureNotice issues={issues} />;
+  }
+
+  const { state } = await searchParams;
+  return <ProjectCreateForm state={state} />;
 }

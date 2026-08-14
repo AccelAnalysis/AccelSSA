@@ -1,63 +1,63 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { PageHeader } from "@/components/ui/page-header";
-import { listAccessibleProjects } from "@/domains/projects-workspace/runtime";
-import { defaultProjectStages } from "../../../domains/projects-workflow/src/default-workflow";
-import styles from "@/components/projects/projects.module.css";
+import { ConfigurationRequiredState, EmptyState } from "@/components/ui/workspace-states";
+import { DataTable, InlineStatus, WorkspaceToolbar } from "@/components/ui/workspace-primitives";
+import type { WorkspaceProjectRow } from "@/domains/projects-workflow/postgres";
+import styles from "./projects-workspace.module.css";
 
-function stageLabel(tenantId: string, code: string) {
-  return defaultProjectStages(tenantId).find((stage) => stage.code === code)?.displayName ?? code.replaceAll("_", " ");
+function stageLabel(code: string): string {
+  return code.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+function dateLabel(value?: string): string {
+  if (!value) return "—";
+  const parsed = new Date(`${value.slice(0, 10)}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? value : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+}
+function nextAction(row: WorkspaceProjectRow): string {
+  if (row.nextTask) return row.nextTask.title;
+  const byStage: Record<string, string> = {
+    INTAKE: "Confirm project brief", REQUIREMENTS_DEFINITION: "Define decision requirements", GEOGRAPHIC_SCREENING: "Screen target geographies",
+    MARKET_EVALUATION: "Review qualified markets", PROPERTY_SCREENING: "Review candidate properties", SHORTLIST: "Confirm shortlist",
+    DUE_DILIGENCE: "Resolve due diligence", SITE_VISITS: "Prepare site visits", FINALISTS: "Compare finalists", NEGOTIATION: "Track negotiations",
+    RECOMMENDATION: "Prepare recommendation",
+  };
+  return byStage[row.project.stageCode] ?? "Review project";
 }
 
-function currency(value?: number) {
-  return value === undefined ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
-}
+const columns = [
+  { key: "client", label: "Client" }, { key: "project", label: "Project" }, { key: "type", label: "Type" }, { key: "stage", label: "Stage" },
+  { key: "opening", label: "Target opening" }, { key: "lead", label: "Lead" }, { key: "next", label: "Next action" }, { key: "risk", label: "Risk / missing info" },
+] as const;
 
-export async function ProjectsWorkspace() {
-  let projects: Awaited<ReturnType<typeof listAccessibleProjects>> = [];
-  let unavailable: string | undefined;
-  try {
-    projects = await listAccessibleProjects((await headers()).get("cookie"));
-  } catch (error) {
-    unavailable = error instanceof Error ? error.message : "Projects are unavailable.";
-  }
+export function ProjectsWorkspace({ projects, riskDataAvailable }: { projects: WorkspaceProjectRow[]; riskDataAvailable: boolean }) {
+  const rows = projects.map((row) => ({
+    client: row.client.operatingName ?? row.client.legalName,
+    project: <div key={`${row.project.projectId}-project`}><Link className={styles.tableLink} href={`/projects/${encodeURIComponent(row.project.projectId)}`}>{row.project.name}</Link><div className={styles.subtle}>{row.project.engagementStatus}</div></div>,
+    type: row.project.projectType ?? row.project.facilityType ?? "—",
+    stage: <InlineStatus key={`${row.project.projectId}-stage`}>{stageLabel(row.project.stageCode)}</InlineStatus>,
+    opening: dateLabel(row.project.targetOpeningDate),
+    lead: row.leadEmail ?? "—",
+    next: <span className={row.nextTask?.status === "BLOCKED" ? styles.attention : undefined} key={`${row.project.projectId}-next`}>{nextAction(row)}</span>,
+    risk: riskDataAvailable ? "Available in project" : <span className={styles.unavailable} key={`${row.project.projectId}-risk`}>Not connected</span>,
+  }));
 
   return (
     <>
       <div className="page-header-with-action">
-        <PageHeader eyebrow="Workspace" title="Projects" description="Active site-selection engagements and the work requiring attention." />
-        <Link className="button button-primary" href="/projects/new">Create project</Link>
+        <PageHeader eyebrow="Engagements" title="Projects" description="Active site-selection engagements and the next work requiring attention." />
+        <Link className="button button-primary" href="/projects/new">Create Project</Link>
       </div>
+      <WorkspaceToolbar ariaLabel="Project list status"><InlineStatus>{projects.length} active</InlineStatus></WorkspaceToolbar>
+      {projects.length ? <DataTable columns={columns} rows={rows} caption="Active site-selection projects" /> : <EmptyState title="No projects yet" description="Create the first client engagement to begin working in project context." action={<Link className="button button-primary" href="/projects/new">Create Project</Link>} />}
+    </>
+  );
+}
 
-      {unavailable ? <div className="inline-notice" role="status">{unavailable}</div> : null}
-
-      {!unavailable && projects.length === 0 ? (
-        <div className="empty-state-line">
-          <span>No projects yet.</span>
-          <Link href="/projects/new">Create the first project →</Link>
-        </div>
-      ) : null}
-
-      {projects.length > 0 ? (
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Project</th><th>Stage</th><th>Target opening</th><th>Geographies</th><th>Investment</th><th>Employment</th><th>Open work</th></tr></thead>
-            <tbody>
-              {projects.map(({ project, clientName, openTasks, overdueTasks }) => (
-                <tr key={project.projectId}>
-                  <td><Link className={styles.tableLink} href={`/projects/${project.projectId}`}>{project.name}</Link><span className={styles.secondary}>{clientName}</span></td>
-                  <td>{stageLabel(project.tenantId, project.stageCode)}</td>
-                  <td>{project.targetOpeningDate ?? "—"}</td>
-                  <td>{project.targetGeographies.length ? project.targetGeographies.join(", ") : "—"}</td>
-                  <td>{currency(project.capitalInvestment)}</td>
-                  <td>{project.plannedEmployment?.toLocaleString("en-US") ?? "—"}</td>
-                  <td>{openTasks}{overdueTasks ? <span className="status-danger"> · {overdueTasks} overdue</span> : null}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
+export function ProjectInfrastructureNotice({ issues }: { issues: string[] }) {
+  return (
+    <>
+      <PageHeader eyebrow="Engagements" title="Projects" description="Project records require authoritative persistence and authenticated tenant context." />
+      <ConfigurationRequiredState title="Project workspace configuration required" description={issues.join(" ")} />
     </>
   );
 }
