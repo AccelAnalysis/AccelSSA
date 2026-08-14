@@ -415,15 +415,30 @@ async function loadSecurityContext(sql: SqlClient, actor: ActorContext, projectI
   }
   const projectMemberships = projectId ? (await sql.query(`SELECT tenant_id,project_id,user_id,status,allow_permissions,deny_permissions
     FROM project_memberships WHERE tenant_id=$1 AND project_id=$2 AND user_id=$3`, [actor.tenantId, projectId, actor.userId])).rows : [];
+  const securityTenantId = actor.tenantId as SecurityContext["tenantMemberships"][number]["tenantId"];
+  const securityUserId = actor.userId as NonNullable<SecurityContext["userId"]>;
   return {
     authenticated: true,
     sessionValid: true,
     accountStatus: String(account.account_status) as SecurityContext["accountStatus"],
-    userId: actor.userId,
-    tenantMemberships: [{ tenantId: actor.tenantId, userId: actor.userId, role: String(account.role) as SecurityContext["tenantMemberships"][number]["role"], status: String(account.membership_status) as SecurityContext["tenantMemberships"][number]["status"] }],
-    projectMemberships: projectMemberships.map((row) => ({ tenantId: String(row.tenant_id), projectId: String(row.project_id), userId: String(row.user_id),
-      status: String(row.status) as SecurityContext["projectMemberships"][number]["status"], allow: (row.allow_permissions ?? []) as string[], deny: (row.deny_permissions ?? []) as string[] })),
-    externalScopes: [], requestedTenantId: actor.tenantId, evaluatedAt: Date.now(),
+    userId: securityUserId,
+    tenantMemberships: [{
+      tenantId: securityTenantId,
+      userId: securityUserId,
+      role: String(account.role) as SecurityContext["tenantMemberships"][number]["role"],
+      status: String(account.membership_status) as SecurityContext["tenantMemberships"][number]["status"],
+    }],
+    projectMemberships: projectMemberships.map((row) => ({
+      tenantId: String(row.tenant_id) as SecurityContext["projectMemberships"][number]["tenantId"],
+      projectId: String(row.project_id) as SecurityContext["projectMemberships"][number]["projectId"],
+      userId: String(row.user_id) as SecurityContext["projectMemberships"][number]["userId"],
+      status: String(row.status) as SecurityContext["projectMemberships"][number]["status"],
+      allow: (row.allow_permissions ?? []) as string[],
+      deny: (row.deny_permissions ?? []) as string[],
+    })),
+    externalScopes: [],
+    requestedTenantId: securityTenantId,
+    evaluatedAt: Date.now(),
   };
 }
 
@@ -435,8 +450,8 @@ export function createCategory02Authorization(sql: SqlClient): AuthorizationPort
       const protectedResource: ProtectedResource = {
         id: mapping.createProjectResource ? "new-project" : (resource.objectId ?? resource.projectId ?? resource.clientId ?? actor.tenantId),
         type: mapping.resourceType,
-        tenantId: actor.tenantId,
-        projectId: mapping.createProjectResource ? undefined : resource.projectId,
+        tenantId: actor.tenantId as ProtectedResource["tenantId"],
+        projectId: mapping.createProjectResource ? undefined : resource.projectId as ProtectedResource["projectId"],
         visibility: (resource.visibility ?? Visibility.INTERNAL) as ProtectedResource["visibility"],
         classification: Classification.CONFIDENTIAL,
       };
