@@ -1,0 +1,16 @@
+{
+  "name": "@accelssa/security-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deny-by-default authorization and tenancy policy core for AccelSSA Category 2.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  }
+}
