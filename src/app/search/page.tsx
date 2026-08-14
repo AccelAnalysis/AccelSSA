@@ -2,9 +2,17 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { PageHeader } from "@/components/ui/page-header";
 import { isFirmAdministrator, resolveWorkspaceAccess } from "@/domains/identity-security/request-access";
-import { searchApplicationCatalog } from "@/domains/data-ai/search-runtime";
+import { searchApplicationCatalog, type GlobalSearchResultKind } from "@/domains/data-ai/search-runtime";
 
 export const dynamic = "force-dynamic";
+
+const resultTypeLabels: Readonly<Record<GlobalSearchResultKind, string>> = {
+  workspace: "Workspace",
+  project: "Project",
+  client: "Client",
+  metric: "Metric",
+  integration: "Integration",
+};
 
 export default async function SearchPage({
   searchParams,
@@ -55,7 +63,7 @@ export default async function SearchPage({
                   {results.map((result) => (
                     <tr key={`${result.kind}:${result.id}`}>
                       <td><Link href={result.href}><strong>{result.title}</strong></Link></td>
-                      <td>{result.kind === "workspace" ? "Workspace" : result.kind === "metric" ? "Metric" : "Integration"}</td>
+                      <td>{resultTypeLabels[result.kind]}</td>
                       <td>{result.summary}</td>
                     </tr>
                   ))}
