@@ -12,10 +12,10 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run build --workspace @accelssa/financial-engine && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:app": "vitest run",
+    "test:app": "npm run build --workspace @accelssa/financial-engine && vitest run",
     "test:domains": "npm run test --workspace @accelssa/projects-workflow && npm run test --workspace @accelssa/requirements-engine && npm run test --workspace @accelssa/gis && npm run test --workspace @accelssa/location-intelligence && npm run test --workspace @accelssa/properties && npm run test --workspace @accelssa/decision-analytics && npm run test --workspace @accelssa/financial-engine && npm run test --workspace @accelssa/due-diligence && npm run test --workspace @accelssa/decision-output && npm run test --workspace @accelssa/data-ai-automation",
     "test": "npm run test:app && npm run test:domains",
     "check": "npm run typecheck && npm run test && npm run build"

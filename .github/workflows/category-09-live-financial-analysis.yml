@@ -1,0 +1,41 @@
+name: Category 09 Live Financial Analysis
+
+on:
+  pull_request:
+    paths:
+      - "src/app/analysis/financial/**"
+      - "src/app/api/v1/financial-analysis/**"
+      - "src/components/financial/**"
+      - "src/domains/financial-analysis/**"
+      - "packages/financial-engine/**"
+      - "db/migrations/0009_category_09_financial_analysis.sql"
+      - ".github/workflows/category-09-live-financial-analysis.yml"
+  push:
+    branches:
+      - feature/category-09-live-financial-analysis
+
+permissions:
+  contents: read
+
+jobs:
+  financial-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Financial engine tests
+        run: npm run test --workspace @accelssa/financial-engine
+
+      - name: Full repository check
+        run: npm run check

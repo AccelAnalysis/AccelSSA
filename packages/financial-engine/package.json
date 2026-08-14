@@ -5,9 +5,13 @@
   "type": "module",
   "description": "AccelSSA Category 9 domain engine for costs, financial modeling, incentives, eligibility, lifecycle, comparison, and versioned financial snapshots.",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "files": [
     "dist"
   ],
