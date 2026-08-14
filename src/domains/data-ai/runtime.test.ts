@@ -19,8 +19,11 @@ describe("Category 12 product runtime", () => {
 
   it("derives freshness policies from the authoritative metric catalog", () => {
     const definition = CATEGORY6_METRIC_DEFINITIONS[0]!;
+    const freshnessDays = definition.freshnessDays;
+    expect(freshnessDays).toBeDefined();
+    if (freshnessDays === undefined) throw new Error("Test metric has no freshness policy");
     expect(freshnessPolicyForMetric(definition.id as `metric.${string}`).maxAgeMs)
-      .toBe(definition.freshnessDays * 24 * 60 * 60 * 1000);
+      .toBe(freshnessDays * 24 * 60 * 60 * 1000);
   });
 
   it("does not report absent integrations as configured", () => {
