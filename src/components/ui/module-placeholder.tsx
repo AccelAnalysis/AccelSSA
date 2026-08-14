@@ -7,19 +7,19 @@ export function ModulePlaceholder({ path }: { path: string }) {
     <>
       <header className="page-header">
         <div>
-          <div className="eyebrow">Reserved domain surface</div>
+          <div className="eyebrow">Converged domain surface</div>
           <h1>{domain?.name ?? "AccelSSA module"}</h1>
           <p className="lede">
-            The shared Category 1 shell and route are active. Substantive business behavior remains owned by the designated build category.
+            The authoritative domain kernel is merged into the AccelSSA repository. This route remains the shared application-shell integration surface while persistence, provider, and full workflow UI adapters are wired to the domain contracts.
           </p>
         </div>
-        <span className="status-badge reserved">Reserved</span>
+        <span className="status-badge reserved">Domain kernel merged</span>
       </header>
       <div className="card">
         <h2>Platform boundary</h2>
         <p>{domain?.responsibility}</p>
         <p>
-          Implement this domain under <span className="code">src/domains/{domain?.slug}</span> and reuse the platform contracts in <span className="code">src/platform</span>.
+          Runtime adapters must preserve the shared tenant, project, candidate, metric, provenance, evidence, visibility, audit, version, and decision contracts rather than introduce a second source of truth.
         </p>
         <p><Link href="/">Return to platform overview →</Link></p>
       </div>

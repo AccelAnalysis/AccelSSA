@@ -1,0 +1,108 @@
+name: Firebase Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: accelssa-firebase-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FIREBASE_PROJECT_ID: accelprocure
+  FIREBASE_APP_ID: 1:479058229962:web:ea47507361c34560ea1233
+  FIREBASE_APPHOSTING_BACKEND: accelssa
+  FIREBASE_APPHOSTING_LOCATION: us-east4
+  FIREBASE_TOOLS_VERSION: 15.25.0
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install workspace dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify converged platform
+        run: npm run check
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Configure Firebase service-account credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ACCELPROCURE }}
+        run: |
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT_JSON}" ]; then
+            echo "::error::Missing GitHub secret FIREBASE_SERVICE_ACCOUNT_ACCELPROCURE. Store the CI service-account JSON as that repository or production-environment secret, then rerun this workflow."
+            exit 1
+          fi
+          CREDENTIALS_FILE="${RUNNER_TEMP}/accelprocure-firebase-service-account.json"
+          printf '%s' "${FIREBASE_SERVICE_ACCOUNT_JSON}" > "${CREDENTIALS_FILE}"
+          chmod 600 "${CREDENTIALS_FILE}"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${CREDENTIALS_FILE}" >> "${GITHUB_ENV}"
+
+      - name: Verify Firebase App Hosting backend
+        run: |
+          npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} apphosting:backends:get \
+            "${FIREBASE_APPHOSTING_BACKEND}" \
+            --project "${FIREBASE_PROJECT_ID}" \
+            --location "${FIREBASE_APPHOSTING_LOCATION}" \
+            --non-interactive || {
+              echo "::error::Firebase App Hosting backend '${FIREBASE_APPHOSTING_BACKEND}' does not exist or the CI service account cannot access it. Create the first backend in project '${FIREBASE_PROJECT_ID}' in ${FIREBASE_APPHOSTING_LOCATION}, associate Firebase Web App ${FIREBASE_APP_ID}, connect it to AccelAnalysis/AccelSSA, disable automatic rollouts, then rerun this workflow."
+              exit 1
+            }
+
+      - name: Trigger exact validated commit rollout
+        run: |
+          npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} apphosting:rollouts:create \
+            "${FIREBASE_APPHOSTING_BACKEND}" \
+            --git_commit "${GITHUB_SHA}" \
+            --project "${FIREBASE_PROJECT_ID}" \
+            --non-interactive
+
+      - name: Read deployed backend
+        run: |
+          npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} apphosting:backends:get \
+            "${FIREBASE_APPHOSTING_BACKEND}" \
+            --project "${FIREBASE_PROJECT_ID}" \
+            --location "${FIREBASE_APPHOSTING_LOCATION}" \
+            --non-interactive | tee /tmp/accelssa-backend.txt
+
+      - name: Remove service-account credential file
+        if: always()
+        run: rm -f "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+
+      - name: Release summary
+        run: |
+          echo "## AccelSSA Firebase release" >> "$GITHUB_STEP_SUMMARY"
+          echo "Project: \`${FIREBASE_PROJECT_ID}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Web app: \`${FIREBASE_APP_ID}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "App Hosting backend: \`${FIREBASE_APPHOSTING_BACKEND}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Region: \`${FIREBASE_APPHOSTING_LOCATION}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated source commit: \`${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub Actions triggered a Firebase App Hosting rollout for the exact commit that passed the complete AccelSSA repository check." >> "$GITHUB_STEP_SUMMARY"

@@ -6,12 +6,18 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "workspaces": [
+    "domains/projects-workflow",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test:app": "vitest run",
+    "test:domains": "npm run test --workspace @accelssa/projects-workflow && npm run test --workspace @accelssa/requirements-engine && npm run test --workspace @accelssa/gis && npm run test --workspace @accelssa/location-intelligence && npm run test --workspace @accelssa/properties && npm run test --workspace @accelssa/decision-analytics && npm run test --workspace @accelssa/financial-engine && npm run test --workspace @accelssa/due-diligence && npm run test --workspace @accelssa/decision-output && npm run test --workspace @accelssa/data-ai-automation",
+    "test": "npm run test:app && npm run test:domains",
     "check": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
