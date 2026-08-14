@@ -4,19 +4,25 @@ on:
   push:
     paths:
       - 'packages/gis/**'
+      - 'src/components/maps/**'
+      - 'src/app/locations/**'
       - 'docs/architecture/category-05-gis-spatial-analysis.md'
+      - '.env.example'
       - '.github/workflows/category-05-gis.yml'
   pull_request:
     paths:
       - 'packages/gis/**'
+      - 'src/components/maps/**'
+      - 'src/app/locations/**'
       - 'docs/architecture/category-05-gis-spatial-analysis.md'
+      - '.env.example'
       - '.github/workflows/category-05-gis.yml'
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  gis:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,3 +37,15 @@ jobs:
       - run: npm install --ignore-scripts
       - run: npm run typecheck
       - run: npm test
+
+  root-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run check
