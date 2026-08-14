@@ -36,7 +36,8 @@ describe("Category 03 project runtime", () => {
   });
 
   it("treats DATABASE_URL as the project-store infrastructure prerequisite", () => {
-    expect(projectInfrastructureStatus({ DATABASE_URL: "postgres://example" } as NodeJS.ProcessEnv)).toEqual({ ready: true, issues: [] });
+    const env = { DATABASE_URL: "postgres://example" } as unknown as NodeJS.ProcessEnv;
+    expect(projectInfrastructureStatus(env)).toEqual({ ready: true, issues: [] });
   });
 
   it("derives the project actor only from Category 02 allowed workspace access", () => {
