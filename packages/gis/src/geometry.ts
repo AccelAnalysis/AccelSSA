@@ -1,4 +1,5 @@
-import type { BoundingBox, Geometry, PointGeometry, Position } from "./types/geojson.js";
+import type { DistanceUnit } from "./domain/spatial-analysis.js";
+import type { BoundingBox, Geometry, PointGeometry, PolygonGeometry, Position } from "./types/geojson.js";
 
 const EARTH_RADIUS_KM = 6371.0088;
 const KM_PER_MILE = 1.609344;
@@ -98,6 +99,10 @@ function toRadians(degrees: number): number {
   return degrees * Math.PI / 180;
 }
 
+function toDegrees(radians: number): number {
+  return radians * 180 / Math.PI;
+}
+
 export function haversineKilometers(origin: PointGeometry, destination: PointGeometry): number {
   assertValidGeometry(origin);
   assertValidGeometry(destination);
@@ -111,4 +116,56 @@ export function haversineKilometers(origin: PointGeometry, destination: PointGeo
 
 export function haversineMiles(origin: PointGeometry, destination: PointGeometry): number {
   return haversineKilometers(origin, destination) / KM_PER_MILE;
+}
+
+function distanceInKilometers(distance: number, unit: DistanceUnit): number {
+  if (!Number.isFinite(distance) || distance <= 0) {
+    throw new Error("distance must be a positive finite number");
+  }
+  switch (unit) {
+    case "KILOMETERS": return distance;
+    case "MILES": return distance * KM_PER_MILE;
+    case "METERS": return distance / 1000;
+  }
+}
+
+/**
+ * Creates an ephemeral geodesic buffer suitable for map measurement/preview.
+ * Authoritative persisted buffers still flow through SpatialAnalysisService.
+ */
+export function createGeodesicCircle(
+  center: PointGeometry,
+  distance: number,
+  unit: DistanceUnit,
+  segments = 96,
+): PolygonGeometry {
+  assertValidGeometry(center);
+  if (!Number.isInteger(segments) || segments < 16 || segments > 720) {
+    throw new Error("segments must be an integer between 16 and 720");
+  }
+
+  const [longitude, latitude] = center.coordinates;
+  const originLatitude = toRadians(latitude);
+  const originLongitude = toRadians(longitude);
+  const angularDistance = distanceInKilometers(distance, unit) / EARTH_RADIUS_KM;
+  const ring: Position[] = [];
+
+  for (let step = 0; step < segments; step += 1) {
+    const bearing = 2 * Math.PI * step / segments;
+    const destinationLatitude = Math.asin(
+      Math.sin(originLatitude) * Math.cos(angularDistance)
+      + Math.cos(originLatitude) * Math.sin(angularDistance) * Math.cos(bearing),
+    );
+    const destinationLongitude = originLongitude + Math.atan2(
+      Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(originLatitude),
+      Math.cos(angularDistance) - Math.sin(originLatitude) * Math.sin(destinationLatitude),
+    );
+    const normalizedLongitude = ((toDegrees(destinationLongitude) + 540) % 360) - 180;
+    ring.push([normalizedLongitude, toDegrees(destinationLatitude)]);
+  }
+
+  ring.push([...ring[0]] as Position);
+  const polygon: PolygonGeometry = { type: "Polygon", coordinates: [ring] };
+  assertValidGeometry(polygon);
+  return polygon;
 }
