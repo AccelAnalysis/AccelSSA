@@ -12,24 +12,24 @@ const descriptions: Record<string, string> = {
 export default function AdministrationPage() {
   return (
     <>
-      <PageHeader
-        eyebrow="Settings"
-        title="Administration"
-        description="Manage the organization settings and reusable standards that shape site-selection projects and client deliverables."
-      />
+      <PageHeader eyebrow="Settings" title="Administration" description="Manage the organization settings and reusable standards that shape site-selection projects and client deliverables." />
       <div className="grid grid-2">
+        <Link href="/administration/users" className="card settings-card">
+          <h2>Users & roles</h2><p>Invite identities and assign authoritative organization roles.</p><span className="text-link">Manage access →</span>
+        </Link>
+        <Link href="/administration/integrations" className="card settings-card">
+          <h2>Integrations</h2><p>Review data, AI, storage and processing configuration without exposing credentials.</p><span className="text-link">Review integrations →</span>
+        </Link>
+        <Link href="/administration/operations" className="card settings-card">
+          <h2>Operational health</h2><p>Review core readiness, provider states and tenant-scoped background work.</p><span className="text-link">Review health →</span>
+        </Link>
         {administrationNavigation.map((item) => (
           <Link href={item.href} className="card settings-card" key={item.href}>
-            <h2>{item.label}</h2>
-            <p>{descriptions[item.href]}</p>
-            <span className="text-link">Open settings →</span>
+            <h2>{item.label}</h2><p>{descriptions[item.href]}</p><span className="text-link">Open settings →</span>
           </Link>
         ))}
       </div>
-      <section className="section card">
-        <h2>Access</h2>
-        <p>Administrative changes should be limited to authorized organization administrators. Client and external-contributor workspaces should not expose organization settings.</p>
-      </section>
+      <section className="section card"><h2>Access</h2><p>Organization settings are available only to authenticated Firm Administrators in the active tenant.</p></section>
     </>
   );
 }
