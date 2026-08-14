@@ -46,7 +46,7 @@ export function ProjectContextNav({ projectId }: { projectId: string }) {
   );
 }
 
-export function ProjectDetail({ detail, state, riskDataAvailable = false }: { detail: WorkspaceDetail; state?: string; riskDataAvailable?: boolean }) {
+export function ProjectDetail({ detail, state }: { detail: WorkspaceDetail; state?: string }) {
   const { project, client, stages, transitions, members, tasks, comments, tenantUsers } = detail;
   const currentStage = stages.find((stage) => stage.code === project.stageCode);
   const nextStages = stages.filter((stage) => currentStage?.allowedNextStageCodes.includes(stage.code));
@@ -70,7 +70,6 @@ export function ProjectDetail({ detail, state, riskDataAvailable = false }: { de
 
       <CompactMetricStrip metrics={[
         { label: "Open tasks", value: openTasks.length }, { label: "Blocked", value: blockedTasks.length }, { label: "Team", value: activeMembers.length },
-        { label: "Critical risks", value: riskDataAvailable ? "0" : "—" }, { label: "Missing info", value: riskDataAvailable ? "0" : "—" },
       ]} />
 
       <SplitPane primary={<main>
