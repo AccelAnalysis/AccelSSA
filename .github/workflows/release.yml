@@ -51,8 +51,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: package.json
 
       - name: Configure Firebase service-account credentials
         env:
@@ -74,17 +72,17 @@ jobs:
             --project "${FIREBASE_PROJECT_ID}" \
             --location "${FIREBASE_APPHOSTING_LOCATION}" \
             --non-interactive || {
-              echo "::error::Firebase App Hosting backend '${FIREBASE_APPHOSTING_BACKEND}' does not exist or the CI service account cannot access it. Create the first backend in project '${FIREBASE_PROJECT_ID}' in ${FIREBASE_APPHOSTING_LOCATION}, associate Firebase Web App ${FIREBASE_APP_ID}, then rerun this workflow."
+              echo "::error::Firebase App Hosting backend '${FIREBASE_APPHOSTING_BACKEND}' does not exist or the CI service account cannot access it. Create the first backend in project '${FIREBASE_PROJECT_ID}' in ${FIREBASE_APPHOSTING_LOCATION}, associate Firebase Web App ${FIREBASE_APP_ID}, connect it to AccelAnalysis/AccelSSA, disable automatic rollouts, then rerun this workflow."
               exit 1
             }
 
-      - name: Deploy source to Firebase App Hosting
+      - name: Trigger exact validated commit rollout
         run: |
-          npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} deploy \
-            --only "apphosting:${FIREBASE_APPHOSTING_BACKEND}" \
+          npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} apphosting:rollouts:create \
+            "${FIREBASE_APPHOSTING_BACKEND}" \
+            --git_commit "${GITHUB_SHA}" \
             --project "${FIREBASE_PROJECT_ID}" \
-            --non-interactive \
-            --runtime nodejs22
+            --non-interactive
 
       - name: Read deployed backend
         run: |
@@ -105,6 +103,6 @@ jobs:
           echo "Web app: \`${FIREBASE_APP_ID}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "App Hosting backend: \`${FIREBASE_APPHOSTING_BACKEND}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "Region: \`${FIREBASE_APPHOSTING_LOCATION}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "Source commit: \`${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated source commit: \`${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "The deployment used Firebase App Hosting source deployment after the complete AccelSSA repository check passed." >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub Actions triggered a Firebase App Hosting rollout for the exact commit that passed the complete AccelSSA repository check." >> "$GITHUB_STEP_SUMMARY"
