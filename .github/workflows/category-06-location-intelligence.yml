@@ -1,0 +1,37 @@
+name: Category 06 Location Intelligence
+
+on:
+  push:
+    paths:
+      - 'packages/location-intelligence/**'
+      - 'src/domains/location-intelligence/**'
+      - 'src/app/projects/**/markets/**'
+      - 'src/app/api/projects/**/intelligence/**'
+      - 'docs/domains/category-06-live-location-intelligence.md'
+      - '.github/workflows/category-06-location-intelligence.yml'
+  pull_request:
+    paths:
+      - 'packages/location-intelligence/**'
+      - 'src/domains/location-intelligence/**'
+      - 'src/app/projects/**/markets/**'
+      - 'src/app/api/projects/**/intelligence/**'
+      - 'docs/domains/category-06-live-location-intelligence.md'
+      - '.github/workflows/category-06-location-intelligence.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Category 06 package tests
+        run: npm run test --workspace @accelssa/location-intelligence
+      - name: Full repository check
+        run: npm run check
