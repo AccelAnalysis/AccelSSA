@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { AccountMenu, type AccountMenuProps } from "@/components/auth/account-menu";
 
-export function Topbar() {
+export function Topbar({ account }: { account: AccountMenuProps }) {
   return (
     <header className="topbar">
       <div className="context-stack" aria-label="Current workspace context">
         <div className="context-item">
           <span className="context-label">Organization</span>
-          <span className="context-value">Not configured</span>
+          <span className="context-value">{account.tenantName}</span>
         </div>
         <Link className="context-item project-selector" href="/projects">
           <span className="context-label">Project</span>
@@ -14,10 +15,8 @@ export function Topbar() {
         </Link>
       </div>
       <div className="top-actions">
-        <div className="user-context" aria-label="User account">
-          <div className="user-chip" aria-hidden="true">U</div>
-          <span className="user-label">Account</span>
-        </div>
+        <Link className="button button-quiet" href="/search">Search</Link>
+        <AccountMenu {...account} />
       </div>
     </header>
   );
