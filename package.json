@@ -11,10 +11,15 @@
     "packages/*"
   ],
   "scripts": {
+    "build:category-12-runtime": "npm run build --workspace @accelssa/location-intelligence && npm run build --workspace @accelssa/data-ai-automation",
+    "predev": "npm run build:category-12-runtime",
     "dev": "next dev",
+    "prebuild": "npm run build:category-12-runtime",
     "build": "next build",
     "start": "next start",
+    "pretypecheck": "npm run build:category-12-runtime",
     "typecheck": "tsc --noEmit",
+    "pretest:app": "npm run build:category-12-runtime",
     "test:app": "vitest run",
     "test:domains": "npm run test --workspace @accelssa/projects-workflow && npm run test --workspace @accelssa/requirements-engine && npm run test --workspace @accelssa/gis && npm run test --workspace @accelssa/location-intelligence && npm run test --workspace @accelssa/properties && npm run test --workspace @accelssa/decision-analytics && npm run test --workspace @accelssa/financial-engine && npm run test --workspace @accelssa/due-diligence && npm run test --workspace @accelssa/decision-output && npm run test --workspace @accelssa/data-ai-automation",
     "test": "npm run test:app && npm run test:domains",
