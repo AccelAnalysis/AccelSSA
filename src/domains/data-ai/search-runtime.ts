@@ -14,18 +14,23 @@ export interface GlobalSearchResult {
   href: string;
 }
 
+interface SearchCatalogOptions {
+  environment?: Readonly<Record<string, string | undefined>>;
+  includeAdministration?: boolean;
+}
+
 const workspaceEntries = [
-  ["Projects", "Clients, engagements and project workflow", "/projects"],
-  ["Locations", "Candidate geographies, maps and spatial screening", "/locations"],
-  ["Properties", "Sites, buildings and development readiness", "/properties"],
-  ["Analysis", "Qualification, scoring and candidate comparison", "/analysis"],
-  ["Visits", "Due diligence, itineraries and field findings", "/visits"],
-  ["Deliverables", "Evidence, recommendations and client-ready output", "/deliverables"],
-  ["Contacts", "Client and location stakeholders", "/contacts"],
-  ["Administration", "Organization and reusable project settings", "/administration"],
-  ["Integrations", "External data, AI and system configuration", "/administration/integrations"],
-  ["Operational health", "Readiness, providers and background processing", "/administration/operations"],
-  ["AI project assistant", "Grounded project questions when configured", "/assistant"],
+  { title: "Projects", text: "Clients, engagements and project workflow", href: "/projects", admin: false },
+  { title: "Locations", text: "Candidate geographies, maps and spatial screening", href: "/locations", admin: false },
+  { title: "Properties", text: "Sites, buildings and development readiness", href: "/properties", admin: false },
+  { title: "Analysis", text: "Qualification, scoring and candidate comparison", href: "/analysis", admin: false },
+  { title: "Visits", text: "Due diligence, itineraries and field findings", href: "/visits", admin: false },
+  { title: "Deliverables", text: "Evidence, recommendations and client-ready output", href: "/deliverables", admin: false },
+  { title: "Contacts", text: "Client and location stakeholders", href: "/contacts", admin: false },
+  { title: "AI project assistant", text: "Grounded project questions when configured", href: "/assistant", admin: false },
+  { title: "Administration", text: "Organization and reusable project settings", href: "/administration", admin: true },
+  { title: "Integrations", text: "External data, AI and system configuration", href: "/administration/integrations", admin: true },
+  { title: "Operational health", text: "Readiness, providers and background processing", href: "/administration/operations", admin: true },
 ] as const;
 
 const platformPrincipal: Principal = {
@@ -61,32 +66,42 @@ function publicDocument(input: {
 
 export function searchApplicationCatalog(
   query: string,
-  environment: Readonly<Record<string, string | undefined>> = process.env,
+  options: SearchCatalogOptions = {},
 ): GlobalSearchResult[] {
   const index = new InMemorySearchIndex();
+  const includeAdministration = options.includeAdministration ?? false;
 
-  for (const [title, text, href] of workspaceEntries) {
-    index.upsert(publicDocument({ objectType: "workspace", objectId: href, title, text, href }));
-  }
-
-  for (const metric of canonicalMetricCatalog()) {
+  for (const entry of workspaceEntries) {
+    if (entry.admin && !includeAdministration) continue;
     index.upsert(publicDocument({
-      objectType: "metric",
-      objectId: metric.key,
-      title: metric.name,
-      text: `${metric.key} ${metric.unit} ${metric.domain}`,
-      href: `/administration/integrations/metrics?metric=${encodeURIComponent(metric.key)}`,
+      objectType: "workspace",
+      objectId: entry.href,
+      title: entry.title,
+      text: entry.text,
+      href: entry.href,
     }));
   }
 
-  for (const integration of integrationRegistryView(environment)) {
-    index.upsert(publicDocument({
-      objectType: "integration",
-      objectId: integration.id,
-      title: integration.name,
-      text: `${integration.description} ${integration.statusLabel}`,
-      href: "/administration/integrations",
-    }));
+  if (includeAdministration) {
+    for (const metric of canonicalMetricCatalog()) {
+      index.upsert(publicDocument({
+        objectType: "metric",
+        objectId: metric.key,
+        title: metric.name,
+        text: `${metric.key} ${metric.unit} ${metric.domain}`,
+        href: `/administration/integrations/metrics?metric=${encodeURIComponent(metric.key)}`,
+      }));
+    }
+
+    for (const integration of integrationRegistryView(options.environment ?? process.env)) {
+      index.upsert(publicDocument({
+        objectType: "integration",
+        objectId: integration.id,
+        title: integration.name,
+        text: `${integration.description} ${integration.statusLabel}`,
+        href: "/administration/integrations",
+      }));
+    }
   }
 
   return index.query(platformPrincipal, { text: query, limit: 40 }).map((document) => ({
