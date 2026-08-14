@@ -1,0 +1,252 @@
+openapi: 3.1.0
+info:
+  title: AccelSSA GIS API
+  version: 1.0.0
+  description: Category 5 contract for geographies, map configuration, custom geography, and spatial analysis.
+servers:
+  - url: /api/v1
+paths:
+  /geographies/{geographyId}:
+    get:
+      summary: Get an authorized canonical geography
+      parameters:
+        - $ref: '#/components/parameters/GeographyId'
+      responses:
+        '200':
+          description: Geography
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geography'
+        '404':
+          description: Geography unavailable or not visible to caller
+  /geographies/{geographyId}/children:
+    get:
+      summary: List authorized direct hierarchy children
+      parameters:
+        - $ref: '#/components/parameters/GeographyId'
+      responses:
+        '200':
+          description: Child geographies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Geography'
+  /projects/{projectId}/map/layers:
+    get:
+      summary: List map layers visible to the actor for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Visible map layer definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MapLayer'
+  /projects/{projectId}/custom-geographies:
+    post:
+      summary: Persist an authorized custom project geography
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomGeography'
+      responses:
+        '201':
+          description: Custom geography created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geography'
+  /spatial/analyses:
+    post:
+      summary: Execute or retrieve an authorized spatial analysis
+      description: Results are authoritative server-side records with source-geometry lineage. Long-running adapters may return asynchronous job state in the platform integration layer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpatialAnalysisRequest'
+      responses:
+        '200':
+          description: Existing cached or newly calculated result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpatialAnalysisResult'
+components:
+  parameters:
+    GeographyId:
+      name: geographyId
+      in: path
+      required: true
+      schema: { type: string }
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema: { type: string }
+  schemas:
+    Geography:
+      type: object
+      required: [geographyId, geographyType, scope, canonicalName, displayName, currentGeometryVersionId]
+      properties:
+        geographyId: { type: string }
+        geographyType:
+          type: string
+          enum: [COUNTRY, STATE, REGION, METRO, COUNTY, MUNICIPALITY, ZIP, CENSUS_TRACT, CUSTOM_POLYGON, PARCEL, SITE, BUILDING]
+        scope: { type: string, enum: [GLOBAL, TENANT, PROJECT] }
+        tenantId: { type: string }
+        projectId: { type: string }
+        canonicalName: { type: string }
+        displayName: { type: string }
+        parentGeographyId: { type: string }
+        jurisdictionCode: { type: string }
+        sourceIdentifier: { type: string }
+        currentGeometryVersionId: { type: string }
+    MapLayer:
+      type: object
+      required: [layerId, name, category, geometryType, sourceKind, sourceId, defaultVisible, supportsFiltering, supportsSelection, projectScoped, provenanceRequired, visibility]
+      properties:
+        layerId: { type: string }
+        name: { type: string }
+        category: { type: string }
+        geometryType: { type: string }
+        sourceKind: { type: string }
+        sourceId: { type: string }
+        defaultVisible: { type: boolean }
+        supportsFiltering: { type: boolean }
+        supportsSelection: { type: boolean }
+        projectScoped: { type: boolean }
+        provenanceRequired: { type: boolean }
+        visibility: { type: string, enum: [INTERNAL, PROJECT_TEAM, CLIENT, EXTERNAL_SHARED] }
+    GeoJsonGeometry:
+      type: object
+      required: [type, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [Point, MultiPoint, LineString, MultiLineString, Polygon, MultiPolygon]
+        coordinates: {}
+    SpatialReference:
+      type: object
+      required: [kind, id]
+      properties:
+        kind:
+          type: string
+          enum: [GEOGRAPHY, PROPERTY, PARCEL, SITE, BUILDING, INFRASTRUCTURE, CUSTOM_POINT]
+        id: { type: string }
+        geometryVersionId: { type: string }
+    CreateCustomGeography:
+      type: object
+      required: [name, purpose, sourceType, geometry]
+      properties:
+        name: { type: string }
+        purpose:
+          type: string
+          enum: [STUDY_AREA, LABOR_SHED, TRADE_AREA, CUSTOM_REGION, CLIENT_AREA]
+        sourceType:
+          type: string
+          enum: [DRAWN, UPLOADED, GENERATED, DERIVED]
+        geometry:
+          $ref: '#/components/schemas/GeoJsonGeometry'
+        provenance:
+          type: object
+          additionalProperties: true
+    SpatialAnalysisRequest:
+      oneOf:
+        - $ref: '#/components/schemas/DistanceRequest'
+        - $ref: '#/components/schemas/TravelTimeRequest'
+        - $ref: '#/components/schemas/TravelAreaRequest'
+        - $ref: '#/components/schemas/RadiusRequest'
+        - $ref: '#/components/schemas/IntersectionRequest'
+        - $ref: '#/components/schemas/ContainmentRequest'
+    DistanceRequest:
+      type: object
+      required: [type, origin, destination, mode, unit]
+      properties:
+        type: { const: DISTANCE }
+        origin: { $ref: '#/components/schemas/SpatialReference' }
+        destination: { $ref: '#/components/schemas/SpatialReference' }
+        mode: { type: string, enum: [GEODESIC, NETWORK] }
+        unit: { type: string, enum: [MILES, KILOMETERS, METERS] }
+        travelMode: { type: string, enum: [DRIVE, TRUCK, WALK] }
+    TravelTimeRequest:
+      type: object
+      required: [type, origin, destination, travelMode]
+      properties:
+        type: { const: TRAVEL_TIME }
+        origin: { $ref: '#/components/schemas/SpatialReference' }
+        destination: { $ref: '#/components/schemas/SpatialReference' }
+        travelMode: { type: string, enum: [DRIVE, TRUCK, WALK] }
+    TravelAreaRequest:
+      type: object
+      required: [type, origin, durationMinutes, travelMode]
+      properties:
+        type: { const: TRAVEL_AREA }
+        origin: { $ref: '#/components/schemas/SpatialReference' }
+        durationMinutes: { type: number, exclusiveMinimum: 0, maximum: 1440 }
+        travelMode: { type: string, enum: [DRIVE, TRUCK, WALK] }
+    RadiusRequest:
+      type: object
+      required: [type, origin, distance, unit]
+      properties:
+        type: { const: RADIUS }
+        origin: { $ref: '#/components/schemas/SpatialReference' }
+        distance: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string, enum: [MILES, KILOMETERS, METERS] }
+    IntersectionRequest:
+      type: object
+      required: [type, subject, comparison]
+      properties:
+        type: { const: INTERSECTION }
+        subject: { $ref: '#/components/schemas/SpatialReference' }
+        comparison: { $ref: '#/components/schemas/SpatialReference' }
+    ContainmentRequest:
+      type: object
+      required: [type, container, subject]
+      properties:
+        type: { const: CONTAINMENT }
+        container: { $ref: '#/components/schemas/SpatialReference' }
+        subject: { $ref: '#/components/schemas/SpatialReference' }
+    SpatialAnalysisResult:
+      type: object
+      required: [analysisId, tenantId, analysisType, status, requestHash, lineage, calculatedAt]
+      properties:
+        analysisId: { type: string }
+        tenantId: { type: string }
+        projectId: { type: string }
+        analysisType:
+          type: string
+          enum: [DISTANCE, TRAVEL_TIME, TRAVEL_AREA, RADIUS, INTERSECTION, CONTAINMENT]
+        status: { type: string, enum: [PENDING, COMPLETE, FAILED, STALE] }
+        requestHash: { type: string }
+        resultValue: {}
+        resultUnit: { type: string }
+        resultGeometry: { $ref: '#/components/schemas/GeoJsonGeometry' }
+        resultMetadata:
+          type: object
+          additionalProperties: true
+        lineage:
+          type: object
+          required: [sourceGeometryVersionIds, parameters]
+          properties:
+            sourceGeometryVersionIds:
+              type: array
+              items: { type: string }
+            provider: { type: string }
+            providerVersion: { type: string }
+            parameters:
+              type: object
+              additionalProperties: true
+        calculatedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
