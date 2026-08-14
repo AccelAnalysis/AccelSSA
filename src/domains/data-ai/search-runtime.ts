@@ -6,8 +6,18 @@ import {
 import { canonicalMetricCatalog } from "./canonical-registry";
 import { integrationRegistryView } from "./integration-registry";
 
+export type GlobalSearchResultKind = "workspace" | "project" | "client" | "metric" | "integration";
+
 export interface GlobalSearchResult {
-  kind: "workspace" | "metric" | "integration";
+  kind: GlobalSearchResultKind;
+  id: string;
+  title: string;
+  summary: string;
+  href: string;
+}
+
+export interface AuthorizedSearchRecord {
+  kind: "project" | "client";
   id: string;
   title: string;
   summary: string;
@@ -17,6 +27,7 @@ export interface GlobalSearchResult {
 interface SearchCatalogOptions {
   environment?: Readonly<Record<string, string | undefined>>;
   includeAdministration?: boolean;
+  authorizedRecords?: readonly AuthorizedSearchRecord[];
 }
 
 const workspaceEntries = [
@@ -44,7 +55,7 @@ const platformPrincipal: Principal = {
 };
 
 function publicDocument(input: {
-  objectType: GlobalSearchResult["kind"];
+  objectType: GlobalSearchResultKind;
   objectId: string;
   title: string;
   text: string;
@@ -82,6 +93,16 @@ export function searchApplicationCatalog(
     }));
   }
 
+  for (const record of options.authorizedRecords ?? []) {
+    index.upsert(publicDocument({
+      objectType: record.kind,
+      objectId: record.id,
+      title: record.title,
+      text: record.summary,
+      href: record.href,
+    }));
+  }
+
   if (includeAdministration) {
     for (const metric of canonicalMetricCatalog()) {
       index.upsert(publicDocument({
@@ -105,7 +126,7 @@ export function searchApplicationCatalog(
   }
 
   return index.query(platformPrincipal, { text: query, limit: 40 }).map((document) => ({
-    kind: document.objectType as GlobalSearchResult["kind"],
+    kind: document.objectType as GlobalSearchResultKind,
     id: document.objectId,
     title: document.title,
     summary: document.text,
