@@ -3,7 +3,7 @@ import {
   evaluateIntegrationConfiguration,
   type IntegrationConfigurationState,
   type IntegrationRegistration,
-} from "../../../packages/data-ai-automation/src/index";
+} from "@accelssa/data-ai-automation";
 
 const registrations: readonly IntegrationRegistration[] = [
   {
