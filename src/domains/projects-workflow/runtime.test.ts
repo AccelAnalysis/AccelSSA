@@ -30,13 +30,13 @@ function allowedAccess(): WorkspaceAccess {
 
 describe("Category 03 project runtime", () => {
   it("refuses to claim persistence is ready without the authoritative database", () => {
-    const status = projectInfrastructureStatus({} as NodeJS.ProcessEnv);
+    const status = projectInfrastructureStatus({} as unknown as NodeJS.ProcessEnv);
     expect(status.ready).toBe(false);
     expect(status.issues.join(" ")).toContain("DATABASE_URL");
   });
 
   it("treats DATABASE_URL as the project-store infrastructure prerequisite", () => {
-    expect(projectInfrastructureStatus({ DATABASE_URL: "postgres://example" } as NodeJS.ProcessEnv)).toEqual({ ready: true, issues: [] });
+    expect(projectInfrastructureStatus({ DATABASE_URL: "postgres://example" } as unknown as NodeJS.ProcessEnv)).toEqual({ ready: true, issues: [] });
   });
 
   it("derives the project actor only from Category 02 allowed workspace access", () => {
