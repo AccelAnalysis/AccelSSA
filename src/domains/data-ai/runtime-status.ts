@@ -1,4 +1,4 @@
-import type { ConfigurationStatus } from "../../../packages/data-ai-automation/src/configuration";
+import type { ConfigurationStatus } from "@accelssa/data-ai-automation";
 import { integrationRegistryView } from "./integration-registry";
 
 export type ProductReadiness = "READY" | "LIMITED" | "ERROR";
