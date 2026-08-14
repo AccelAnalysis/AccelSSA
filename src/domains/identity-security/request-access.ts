@@ -21,6 +21,11 @@ export interface WorkspaceAccess {
   reason?: string;
 }
 
+export interface WorkspaceTenantSelection {
+  tenant?: TenantAccess;
+  reason?: string;
+}
+
 export function isPublicApplicationPath(pathname: string): boolean {
   return pathname.startsWith("/auth/") || pathname === "/unauthorized";
 }
@@ -40,6 +45,15 @@ export function decidePageAccess(input: {
   return PageAccessStates.ALLOW;
 }
 
+export function selectWorkspaceTenant(tenants: readonly TenantAccess[]): WorkspaceTenantSelection {
+  const activeTenants = tenants.filter((membership) => membership.status === "ACTIVE");
+  if (activeTenants.length === 1) return { tenant: activeTenants[0] };
+  if (activeTenants.length === 0) return { reason: "No active organization membership is available." };
+  return {
+    reason: "Multiple active organization memberships require explicit organization selection before entering the workspace.",
+  };
+}
+
 export async function resolveWorkspaceAccess(cookieHeader: string | null): Promise<WorkspaceAccess> {
   if (!process.env.DATABASE_URL) {
     return { state: PageAccessStates.CONFIGURATION_REQUIRED, reason: "DATABASE_URL is not configured." };
@@ -49,12 +63,23 @@ export async function resolveWorkspaceAccess(cookieHeader: string | null): Promi
   const principal = await verifyFirebaseSessionCookie(sessionCookie);
   if (!principal) return { state: PageAccessStates.SIGN_IN };
   const loaded = await loadSecurityContext(principal);
-  const activeTenants = loaded.tenants.filter((membership) => membership.status === "ACTIVE");
-  const tenant = activeTenants[0];
-  if (!loaded.account || !tenant) {
-    return { state: PageAccessStates.UNAUTHORIZED, email: principal.email, context: loaded.context, tenants: loaded.tenants };
+  const selection = selectWorkspaceTenant(loaded.tenants);
+  if (!loaded.account || !selection.tenant) {
+    return {
+      state: PageAccessStates.UNAUTHORIZED,
+      email: principal.email,
+      context: loaded.context,
+      tenants: loaded.tenants,
+      reason: selection.reason,
+    };
   }
-  return { state: PageAccessStates.ALLOW, email: principal.email, context: loaded.context, tenant, tenants: loaded.tenants };
+  return {
+    state: PageAccessStates.ALLOW,
+    email: principal.email,
+    context: loaded.context,
+    tenant: selection.tenant,
+    tenants: loaded.tenants,
+  };
 }
 
 export async function authorizeRequest(
@@ -77,7 +102,15 @@ export async function authorizeRequest(
   }
   if (!(await tenantExists(resource.tenantId))) {
     const context = (await loadSecurityContext(principal)).context;
-    return { context, decision: { allowed: false, code: "TENANT_NOT_FOUND", reason: "The authoritative tenant does not exist.", details: {} } };
+    return {
+      context,
+      decision: {
+        allowed: false,
+        code: "TENANT_NOT_FOUND",
+        reason: "The authoritative tenant does not exist.",
+        details: {},
+      },
+    };
   }
   const loaded = await loadSecurityContext(principal, {
     requestedTenantId: resource.tenantId,
@@ -98,11 +131,13 @@ export async function requireFirmAdminRequest(request: Request, tenantId: Tenant
 }
 
 export function isFirmAdministrator(access: WorkspaceAccess): boolean {
-  return Boolean(access.tenants?.some((membership) => membership.status === "ACTIVE" && membership.role === Roles.FIRM_ADMIN));
+  return Boolean(
+    access.tenant?.status === "ACTIVE" && access.tenant.role === Roles.FIRM_ADMIN,
+  );
 }
 
 export function firstFirmAdminTenant(access: WorkspaceAccess): TenantAccess | undefined {
-  return access.tenants?.find((membership) => membership.status === "ACTIVE" && membership.role === Roles.FIRM_ADMIN);
+  return isFirmAdministrator(access) ? access.tenant : undefined;
 }
 
 export async function activeTenantAccessForUser(userId: Parameters<typeof listTenantAccess>[0]) {
