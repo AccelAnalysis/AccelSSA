@@ -2,7 +2,7 @@ import {
   InMemorySearchIndex,
   type Principal,
   type SearchDocument,
-} from "../../../packages/data-ai-automation/src/index";
+} from "@accelssa/data-ai-automation";
 import { canonicalMetricCatalog } from "./canonical-registry";
 import { integrationRegistryView } from "./integration-registry";
 
