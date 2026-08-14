@@ -26,17 +26,28 @@ function evidence(id = "ev-1") {
 }
 
 class MemoryRepository {
+  documents = new Map();
+  documentVersions = [];
+  documentLinks = [];
   evidence = new Map();
   evidenceLinks = [];
   recommendations = new Map();
   candidates = [];
   conditions = [];
+  sections = [];
   snapshots = new Map();
   questions = new Map();
   acknowledgements = [];
+  templates = new Map();
+  templateVersions = [];
   deliverables = new Map();
   deliverableVersions = [];
 
+  async getDocument(id) { return this.documents.get(id); }
+  async saveDocument(record) { this.documents.set(record.id, record); }
+  async listDocumentVersions(documentId) { return this.documentVersions.filter((x) => x.documentId === documentId); }
+  async saveDocumentVersion(record) { this.documentVersions.push(record); }
+  async saveDocumentLink(record) { this.documentLinks.push(record); }
   async getEvidence(id) { return this.evidence.get(id); }
   async saveEvidence(record) { this.evidence.set(record.id, record); }
   async saveEvidenceLink(link) { this.evidenceLinks.push(link); }
@@ -45,6 +56,8 @@ class MemoryRepository {
   async listRecommendationCandidates(recommendationId) { return this.candidates.filter((x) => x.recommendationId === recommendationId); }
   async saveRecommendationCandidate(record) { this.candidates.push(record); }
   async listRecommendationConditions(recommendationId) { return this.conditions.filter((x) => x.recommendationId === recommendationId); }
+  async listRecommendationSections(recommendationId) { return this.sections.filter((x) => x.recommendationId === recommendationId); }
+  async saveRecommendationSection(record) { this.sections.push(record); }
   async saveRecommendationCondition(record) {
     const i = this.conditions.findIndex((x) => x.id === record.id);
     if (i >= 0) this.conditions[i] = record; else this.conditions.push(record);
@@ -54,6 +67,11 @@ class MemoryRepository {
   async getQuestion(id) { return this.questions.get(id); }
   async saveQuestion(record) { this.questions.set(record.id, record); }
   async saveDecisionAcknowledgement(record) { this.acknowledgements.push(record); }
+  async getReportTemplate(id) { return this.templates.get(id); }
+  async saveReportTemplate(record) { this.templates.set(record.id, record); }
+  async listReportTemplateVersions(templateId) { return this.templateVersions.filter((x) => x.templateId === templateId); }
+  async getReportTemplateVersion(id) { return this.templateVersions.find((x) => x.id === id); }
+  async saveReportTemplateVersion(record) { this.templateVersions.push(record); }
   async getDeliverable(id) { return this.deliverables.get(id); }
   async saveDeliverable(record) { this.deliverables.set(record.id, record); }
   async listDeliverableVersions(deliverableId) { return this.deliverableVersions.filter((x) => x.deliverableId === deliverableId); }
@@ -65,7 +83,7 @@ function serviceFixture() {
   const events = [];
   let sequence = 0;
   const service = new DecisionOutputService(
-    { async assertProjectAccess() {} },
+    { async assertProjectAccess() {}, async assertTenantAccess() {} },
     repository,
     { now: () => now },
     { next: (prefix) => `${prefix}-${++sequence}` },
@@ -156,6 +174,7 @@ test("recommendation lifecycle requires a snapshot, respects review order, and m
   await assert.rejects(() => service.transitionRecommendation(actor, recommendation.id, "FINAL"), /Invalid recommendation transition/);
   await service.transitionRecommendation(actor, recommendation.id, "INTERNAL_REVIEW");
   await service.transitionRecommendation(actor, recommendation.id, "CLIENT_REVIEW");
+  await assert.rejects(() => service.transitionRecommendation(actor, recommendation.id, "FINAL"), /readiness assessment/i);
   await assert.rejects(
     () => service.transitionRecommendation(actor, recommendation.id, "FINAL", {
       mandatoryRequirementsTotal: 10,
@@ -188,16 +207,40 @@ test("recommendation lifecycle requires a snapshot, respects review order, and m
   await assert.rejects(() => service.reviseRecommendationNarrative(actor, recommendation.id, { rationale: "changed" }), /immutable/i);
 });
 
+test("document versions are immutable records and advance the logical document pointer", async () => {
+  const { service, repository } = serviceFixture();
+  const actor = { actorId: "consultant-1", tenantId: "tenant-1" };
+  const document = await service.createDocument(actor, {
+    projectId: "project-1",
+    category: "UTILITY_CORRESPONDENCE",
+    title: "Electric capacity letter",
+    confidentiality: "CLIENT_CONFIDENTIAL",
+    visibility: "CLIENT",
+  });
+  const v1 = await service.addDocumentVersion(actor, {
+    documentId: document.id, storageObjectId: "obj-1", originalFilename: "capacity.pdf", mimeType: "application/pdf", sizeBytes: 100, checksum: "sha256:1",
+  });
+  const v2 = await service.addDocumentVersion(actor, {
+    documentId: document.id, storageObjectId: "obj-2", originalFilename: "capacity-revised.pdf", mimeType: "application/pdf", sizeBytes: 110, checksum: "sha256:2",
+  });
+  assert.equal(v1.versionNumber, 1);
+  assert.equal(v2.versionNumber, 2);
+  assert.equal(v2.supersedesVersionId, v1.id);
+  assert.equal(repository.documents.get(document.id).currentVersionId, v2.id);
+});
+
 test("deliverable generation binds output to the immutable decision snapshot and template version", async () => {
   const { service, repository } = serviceFixture();
   const actor = { actorId: "consultant-1", tenantId: "tenant-1" };
   const snapshot = await service.createDecisionSnapshot(actor, "project-1", { requirementsVersionId: "requirements-v6", costModelVersionId: "cost-v11" });
+  const template = await service.createReportTemplate(actor, { name: "Executive" });
+  const templateVersion = await service.addReportTemplateVersion(actor, { templateId: template.id, definition: { sections: ["executive_summary"] }, branding: { logo: "default" } });
   const deliverable = await service.createDeliverable(actor, {
     projectId: "project-1",
     type: "EXECUTIVE_RECOMMENDATION",
     title: "Executive Recommendation",
-    templateId: "template-exec",
-    templateVersionId: "template-exec-v3",
+    templateId: template.id,
+    templateVersionId: templateVersion.id,
     sourceSnapshotId: snapshot.id,
   });
 
@@ -205,6 +248,11 @@ test("deliverable generation binds output to the immutable decision snapshot and
   assert.equal(generated.status, "READY_FOR_REVIEW");
   assert.equal(repository.deliverableVersions.length, 1);
   assert.equal(repository.deliverableVersions[0].sourceSnapshotId, snapshot.id);
-  assert.equal(repository.deliverableVersions[0].templateVersionId, "template-exec-v3");
+  assert.equal(repository.deliverableVersions[0].templateVersionId, templateVersion.id);
   assert.equal(repository.deliverableVersions[0].versionNumber, 1);
+  const approved = await service.approveDeliverable(actor, deliverable.id);
+  assert.equal(approved.status, "APPROVED");
+  const published = await service.publishDeliverable(actor, deliverable.id);
+  assert.equal(published.status, "PUBLISHED");
+  assert.equal(published.visibility, "CLIENT");
 });
