@@ -8,6 +8,7 @@ import {
   Roles,
   Visibility,
   type ProtectedResource,
+  type Role,
   type SecurityContext,
 } from "./types";
 import { authorize, DecisionCodes, filterAuthorized } from "./policy";
@@ -17,7 +18,7 @@ const tenantB = "tenant_b" as TenantId;
 const projectA = "project_a" as ProjectId;
 const user1 = "user_1" as UserId;
 
-function context(role = Roles.ANALYST, overrides: Partial<SecurityContext> = {}): SecurityContext {
+function context(role: Role = Roles.ANALYST, overrides: Partial<SecurityContext> = {}): SecurityContext {
   return {
     authenticated: true,
     sessionValid: true,
