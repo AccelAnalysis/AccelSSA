@@ -5,7 +5,7 @@ import type {
   RequirementOperator as AnalyticsRequirementOperator,
   Scenario as AnalyticsScenario,
   ScoreCategory,
-} from "../../../packages/decision-analytics/src/index";
+} from "@accelssa/decision-analytics";
 import {
   resolveScenarioCriteria,
   resolveScenarioRequirements,
@@ -16,7 +16,7 @@ import {
   type RequirementOperator,
   type RequirementSetVersion,
   type ScenarioDefinition,
-} from "../../../packages/requirements-engine/src/index";
+} from "@accelssa/requirements-engine";
 
 const lowerIsBetterOperators = new Set<RequirementOperator>([
   "LT",
