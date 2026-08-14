@@ -42,8 +42,8 @@ describe("live Category 10 workspace", () => {
     state = transitionWorkspaceCandidate(state, "candidate-1", {
       transitionId: "transition-1",
       eventId: "event-1",
-      toStage: "DUE_DILIGENCE",
-      reason: "Approved for detailed review",
+      toStage: "SCREENED",
+      reason: "Initial screen completed",
       occurredAt: "2026-08-14T05:00:00.000Z",
     });
     state = eliminateWorkspaceCandidate(state, "candidate-1", {
