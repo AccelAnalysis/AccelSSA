@@ -1,0 +1,45 @@
+name: Category 10 Live Due Diligence & Visits
+
+on:
+  push:
+    branches:
+      - feature/category-10-live-due-diligence-visits
+    paths:
+      - "src/app/visits/**"
+      - "src/components/workspace/visits-workspace*"
+      - "src/domains/due-diligence/**"
+      - "packages/domain-due-diligence/**"
+      - ".github/workflows/category-10-live-due-diligence.yml"
+  pull_request:
+    paths:
+      - "src/app/visits/**"
+      - "src/components/workspace/visits-workspace*"
+      - "src/domains/due-diligence/**"
+      - "packages/domain-due-diligence/**"
+      - ".github/workflows/category-10-live-due-diligence.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-category-10:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Test due-diligence domain
+        run: npm run test --workspace @accelssa/due-diligence
+
+      - name: Run full platform check
+        run: npm run check
