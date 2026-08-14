@@ -105,10 +105,8 @@ export class GroundedAiService {
 export function validateGroundedAnswer(answer: AiAnswer, availableSourceRefs: readonly string[]): void {
   const available = new Set(availableSourceRefs);
   for (const section of answer.sections) {
-    if (section.classification === "KNOWN_FACT" || section.classification === "CALCULATED_RESULT") {
-      if (section.sourceRefs.length === 0) {
-        throw new Error(`${section.classification} sections require at least one source reference`);
-      }
+    if (section.classification !== "MISSING_INFORMATION" && section.sourceRefs.length === 0) {
+      throw new Error(`${section.classification} sections require at least one source reference`);
     }
     for (const sourceRef of section.sourceRefs) {
       if (!available.has(sourceRef)) {
