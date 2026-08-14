@@ -4,7 +4,7 @@ import type {
   AiModelGateway,
   AiStatementClass,
   AiToolCall,
-} from "../../../packages/data-ai-automation/src/ai";
+} from "@accelssa/data-ai-automation";
 
 export interface OpenAiResponsesGatewayConfig {
   apiKey: string;
