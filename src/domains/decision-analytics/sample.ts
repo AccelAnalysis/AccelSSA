@@ -1,9 +1,9 @@
-import { DecisionAnalyticsEngine, type Candidate } from "../../../packages/decision-analytics/src/index";
+import { DecisionAnalyticsEngine, type Candidate } from "@accelssa/decision-analytics";
 import type {
   DecisionCriterionNode,
   RequirementSetVersion,
   ScenarioDefinition,
-} from "../../../packages/requirements-engine/src/index";
+} from "@accelssa/requirements-engine";
 import { buildAnalyticsScenario } from "./adapter";
 import type { AnalysisCandidate, AnalysisWorkspaceBundle } from "./contracts";
 
