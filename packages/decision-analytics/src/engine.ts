@@ -19,15 +19,12 @@ export const DECISION_ANALYTICS_ENGINE_VERSION = "0.1.0";
 const SCORE_TIE_TOLERANCE = 1e-9;
 
 function assertScope(input: ScreeningRunInput): void {
-  if (input.scenario.requirementsVersion !== Math.max(0, ...input.requirements.map((requirement) => requirement.version))) {
-    throw new Error(
-      `Scenario requirementsVersion ${input.scenario.requirementsVersion} does not match supplied requirements version.`,
-    );
-  }
-
+  const seenCandidateIds = new Set<string>();
   for (const candidate of input.candidates) {
     if (candidate.tenantId !== input.tenantId) throw new Error(`Candidate ${candidate.id} belongs to another tenant.`);
     if (candidate.projectId !== input.projectId) throw new Error(`Candidate ${candidate.id} belongs to another project.`);
+    if (seenCandidateIds.has(candidate.id)) throw new Error(`Duplicate candidate id: ${candidate.id}.`);
+    seenCandidateIds.add(candidate.id);
   }
 }
 
@@ -74,6 +71,10 @@ function deepFreeze<T>(value: T): T {
     for (const child of Object.values(value as Record<string, unknown>)) deepFreeze(child);
   }
   return value;
+}
+
+function valuesEqual(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function applyScenarioVariant(scenario: Scenario, variant: SensitivityVariant): Scenario {
@@ -145,6 +146,11 @@ export class DecisionAnalyticsEngine {
     metricIds: string[],
     dimensions: Record<string, Record<string, unknown>> = {},
   ): ComparisonResult {
+    for (const candidate of candidates) {
+      if (candidate.tenantId !== run.tenantId || candidate.projectId !== run.projectId) {
+        throw new Error(`Candidate ${candidate.id} is outside the screening run scope.`);
+      }
+    }
     const candidateMap = new Map(candidates.map((candidate) => [candidate.id, candidate]));
     return {
       runId: run.runId,
@@ -222,6 +228,9 @@ export class DecisionAnalyticsEngine {
 
   resolveOverride<T>(calculatedValue: T, override?: OverrideRecord<T>): EffectiveValue<T> {
     if (!override) return { calculatedValue, effectiveValue: calculatedValue, overridden: false };
+    if (!valuesEqual(calculatedValue, override.originalValue)) {
+      throw new Error(`Override ${override.id} was created against a different calculated value.`);
+    }
     return {
       calculatedValue,
       effectiveValue: override.overrideValue,
@@ -237,6 +246,11 @@ export class DecisionAnalyticsEngine {
     run: ScreeningRunResult,
     overrides: OverrideRecord[] = [],
   ): Readonly<DecisionSnapshot> {
+    for (const override of overrides) {
+      if (override.tenantId !== run.tenantId || override.projectId !== run.projectId) {
+        throw new Error(`Override ${override.id} is outside the screening run scope.`);
+      }
+    }
     return deepFreeze(
       deepClone({ snapshotId, reason, createdAt, run, overrides }),
     );
