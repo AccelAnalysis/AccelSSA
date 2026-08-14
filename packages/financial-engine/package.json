@@ -1,0 +1,25 @@
+{
+  "name": "@accelssa/financial-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AccelSSA Category 9 domain engine for costs, financial modeling, incentives, eligibility, lifecycle, comparison, and versioned financial snapshots.",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/financial-engine.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
