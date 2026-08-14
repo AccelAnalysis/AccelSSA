@@ -50,6 +50,8 @@ function basePass(requirement: Requirement, actual: Scalar): boolean | null {
     case "is_false":
       return typeof actual === "boolean" ? !actual : null;
   }
+
+  return null;
 }
 
 function isMarginal(requirement: Requirement, actual: Scalar): boolean {
