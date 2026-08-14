@@ -153,4 +153,6 @@ export function normalizeMetric(
     case "piecewise":
       return piecewise(value, config.points);
   }
+
+  return null;
 }
