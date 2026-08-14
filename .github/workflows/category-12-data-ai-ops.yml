@@ -1,0 +1,30 @@
+name: Category 12 Data AI Ops QA
+
+on:
+  pull_request:
+    paths:
+      - "packages/data-ai-automation/**"
+      - "docs/architecture/category-12-data-ai-operations.md"
+      - ".github/workflows/category-12-data-ai-ops.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/data-ai-automation/**"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/data-ai-automation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - run: npm run typecheck
+      - run: npm test
