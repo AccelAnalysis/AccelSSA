@@ -1,22 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { PageAccessStates, type WorkspaceAccess } from "../identity-security/request-access";
+import type { TenantId, UserId } from "../../platform/contracts";
 import { actorFromWorkspaceAccess, projectInfrastructureStatus } from "./runtime";
 
 function allowedAccess(): WorkspaceAccess {
+  const userId = "usr_1" as UserId;
+  const tenantId = "ten_1" as TenantId;
   return {
     state: PageAccessStates.ALLOW,
     context: {
       authenticated: true,
       sessionValid: true,
       accountStatus: "ACTIVE",
-      userId: "usr_1",
+      userId,
       tenantMemberships: [],
       projectMemberships: [],
       externalScopes: [],
     },
     tenant: {
-      tenantId: "ten_1",
-      userId: "usr_1",
+      tenantId,
+      userId,
       role: "FIRM_ADMIN",
       status: "ACTIVE",
       tenantName: "Accel Analysis",
