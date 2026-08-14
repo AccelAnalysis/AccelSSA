@@ -1,0 +1,243 @@
+.workspace {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.persistenceStrip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--warning);
+  background: #fffdf5;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.persistenceStrip[data-ready="true"] {
+  border-left-color: var(--success);
+  background: #f6fef9;
+}
+
+.persistenceStrip strong { color: var(--text); white-space: nowrap; }
+
+.contextGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.contextGrid label,
+.candidateIdentity label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.contextGrid input,
+.contextGrid select,
+.candidateIdentity input,
+.candidateIdentity select {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text);
+  padding: 7px 9px;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.unit { font-size: 10px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionRow button:disabled { opacity: .55; cursor: not-allowed; }
+.engineNote { margin-left: auto; color: var(--muted); font-size: 12px; }
+.engineNote code { font-size: 11px; }
+
+.error,
+.success,
+.warning {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.error { border: 1px solid #fecdca; background: #fef3f2; color: var(--danger); }
+.success { border: 1px solid #abefc6; background: #ecfdf3; color: var(--success); }
+.warning { border: 1px solid #fedf89; background: #fffaeb; color: #7a2e0e; }
+
+.candidateBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.candidateTabs { display: flex; align-items: center; gap: 4px; overflow-x: auto; min-width: 0; }
+.candidateButton,
+.candidateActive {
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 7px;
+  padding: 7px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.candidateButton:hover { background: #f9fafb; color: var(--text); }
+.candidateActive { background: var(--surface-strong); color: #fff; }
+
+.candidateIdentity {
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr 100px 110px 130px auto;
+  gap: 8px;
+  align-items: end;
+}
+.removeButton {
+  min-height: 36px;
+  border: 1px solid #fecdca;
+  background: #fff;
+  color: var(--danger);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tabBar {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+}
+.tab,
+.tabActive {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 10px 12px 9px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--text); }
+.tabActive { color: var(--text); border-bottom-color: var(--accent); }
+
+.panel {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+.panelHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.panelHead h2 { font-size: 16px; }
+.panelHead p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.subhead { margin-top: 8px; font-size: 12px; font-weight: 800; color: var(--text); }
+.inlineNote { margin: 0; font-size: 12px; color: var(--muted); }
+.subtle { color: var(--muted); font-size: 11px; }
+
+.tableWrap {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+}
+.tableWrap table { min-width: 980px; }
+.tableWrap th,
+.tableWrap td { padding: 9px 10px; white-space: nowrap; }
+.tableWrap th { font-size: 11px; }
+.editableTable { min-width: 1750px !important; }
+.editableTable input,
+.editableTable select {
+  width: 100%;
+  min-width: 92px;
+  min-height: 31px;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  padding: 5px 7px;
+  font-size: 12px;
+}
+.editableTable input[type="checkbox"] { min-width: 16px; width: 16px; min-height: 16px; }
+.editableTable td { padding: 6px; }
+.editableTable th { padding: 8px 7px; }
+.emptyCell { text-align: center; color: var(--muted); padding: 24px !important; }
+.iconButton {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+.iconButton:hover { background: #fef3f2; color: var(--danger); }
+
+.summaryStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f9fafb;
+  font-size: 12px;
+  color: var(--muted);
+}
+.summaryStrip strong { color: var(--text); margin-left: 4px; }
+.emptyState { padding: 30px; text-align: center; color: var(--muted); border: 1px dashed var(--border); border-radius: 9px; }
+.hash { display: inline-block; max-width: 280px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+
+@media (max-width: 1200px) {
+  .contextGrid { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
+  .candidateIdentity { grid-template-columns: repeat(3, minmax(140px, 1fr)); }
+  .removeButton { align-self: end; }
+}
+
+@media (max-width: 760px) {
+  .persistenceStrip { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .contextGrid { grid-template-columns: 1fr 1fr; }
+  .candidateBar { align-items: stretch; flex-direction: column; }
+  .candidateIdentity { grid-template-columns: 1fr 1fr; }
+  .panelHead { align-items: stretch; flex-direction: column; }
+  .engineNote { width: 100%; margin-left: 0; }
+}
+
+@media (max-width: 480px) {
+  .contextGrid,
+  .candidateIdentity { grid-template-columns: 1fr; }
+}
