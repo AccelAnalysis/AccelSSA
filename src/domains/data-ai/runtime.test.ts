@@ -93,9 +93,18 @@ describe("Category 12 product runtime", () => {
     expect(snapshot.capabilities.find((capability) => capability.id === "authoritative-store")?.status).toBe("ERROR");
   });
 
-  it("provides working safe catalog search without inventing project records", () => {
-    expect(searchApplicationCatalog("projects", emptyEnvironment).some((result) => result.href === "/projects")).toBe(true);
-    expect(searchApplicationCatalog("population", emptyEnvironment).some((result) => result.kind === "metric")).toBe(true);
-    expect(searchApplicationCatalog("Acme fictional project", emptyEnvironment)).toEqual([]);
+  it("provides safe catalog search without inventing project records or exposing admin destinations", () => {
+    expect(searchApplicationCatalog("projects").some((result) => result.href === "/projects")).toBe(true);
+    expect(searchApplicationCatalog("integrations")).toEqual([]);
+    expect(searchApplicationCatalog("population")).toEqual([]);
+    expect(searchApplicationCatalog("population", {
+      includeAdministration: true,
+      environment: emptyEnvironment,
+    }).some((result) => result.kind === "metric")).toBe(true);
+    expect(searchApplicationCatalog("integrations", {
+      includeAdministration: true,
+      environment: emptyEnvironment,
+    }).some((result) => result.href === "/administration/integrations")).toBe(true);
+    expect(searchApplicationCatalog("Acme fictional project")).toEqual([]);
   });
 });
